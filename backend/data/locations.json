@@ -1,0 +1,29 @@
+{
+  "description": "Fictional sample towns and vendor sites for the offline geocoder. All names and coordinates are invented.",
+  "towns": [
+    { "name": "Exampleville", "lat": 30.0, "lon": -40.0 },
+    { "name": "Samplebury", "lat": 29.93, "lon": -40.03 },
+    { "name": "Demoton", "lat": 30.35, "lon": -39.75 },
+    { "name": "Mockford", "lat": 29.45, "lon": -40.85 },
+    { "name": "Testerfield", "lat": 31.05, "lon": -41.05 }
+  ],
+  "vendor_sites": {
+    "vendor_e": {
+      "lat": 30.2605,
+      "lon": -40.0,
+      "pickup_locations": {
+        "example_farm": { "lat": 30.2605, "lon": -40.0 },
+        "town_dropoff": { "lat": 30.0, "lon": -39.7911 }
+      }
+    },
+    "vendor_f": { "lat": 31.1, "lon": -41.0 },
+    "vendor_g": {
+      "lat": 29.9132,
+      "lon": -40.0,
+      "pickup_locations": {
+        "samplebury_farm": { "lat": 29.9132, "lon": -40.0 }
+      }
+    },
+    "vendor_h": { "lat": 29.8, "lon": -40.25, "farm_truck_radius_miles": 30.0 }
+  }
+}

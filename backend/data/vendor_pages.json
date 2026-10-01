@@ -1,0 +1,212 @@
+[
+  {
+    "vendor_id": "vendor_a",
+    "page_id": "shop",
+    "url": "https://example-farm-a.test/shop/",
+    "requires_login": true,
+    "auth_state_label": "vendor_a",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Our Shop", "Milk"]
+  },
+  {
+    "vendor_id": "vendor_a",
+    "page_id": "cheese",
+    "url": "https://example-farm-a.test/product/cheese/",
+    "requires_login": true,
+    "auth_state_label": "vendor_a",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Cheese"]
+  },
+  {
+    "vendor_id": "vendor_a",
+    "page_id": "farm_eggs",
+    "url": "https://example-farm-a.test/product/farm-eggs/",
+    "requires_login": true,
+    "auth_state_label": "vendor_a",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Farm Eggs"]
+  },
+  {
+    "vendor_id": "vendor_a",
+    "page_id": "sheep_milk",
+    "url": "https://example-farm-a.test/product/sheep-milk/",
+    "requires_login": true,
+    "auth_state_label": "vendor_a",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Sheep"]
+  },
+  {
+    "vendor_id": "vendor_a",
+    "page_id": "cow_milk",
+    "url": "https://example-farm-a.test/product/cow-milk/",
+    "requires_login": true,
+    "auth_state_label": "vendor_a",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Milk", "$", "Size", "Container", "Chilled?", "Add to Cart"]
+  },
+  {
+    "vendor_id": "vendor_a",
+    "page_id": "cream",
+    "url": "https://example-farm-a.test/product/cream/",
+    "requires_login": true,
+    "auth_state_label": "vendor_a",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Cream"]
+  },
+  {
+    "vendor_id": "vendor_a",
+    "page_id": "cow_butter",
+    "url": "https://example-farm-a.test/product/cow-butter/",
+    "requires_login": true,
+    "auth_state_label": "vendor_a",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Butter"]
+  },
+  {
+    "vendor_id": "vendor_c",
+    "page_id": "store",
+    "url": "https://example-farm-c.test/shop",
+    "requires_login": true,
+    "auth_state_label": "vendor_c",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Browse Store", "Shop By Category"]
+  },
+  {
+    "vendor_id": "vendor_c",
+    "page_id": "dairy",
+    "url": "https://example-farm-c.test/shop/dairy",
+    "requires_login": true,
+    "auth_state_label": "vendor_c",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Dairy"]
+  },
+  {
+    "vendor_id": "vendor_c",
+    "page_id": "sheep_dairy",
+    "url": "https://example-farm-c.test/shop/sheep",
+    "requires_login": true,
+    "auth_state_label": "vendor_c",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Sheep"]
+  },
+  {
+    "vendor_id": "vendor_c",
+    "page_id": "cheese",
+    "url": "https://example-farm-c.test/shop/cheese",
+    "requires_login": true,
+    "auth_state_label": "vendor_c",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Cheese"]
+  },
+  {
+    "vendor_id": "vendor_c",
+    "page_id": "eggs",
+    "url": "https://example-farm-c.test/shop/eggs",
+    "requires_login": true,
+    "auth_state_label": "vendor_c",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Eggs"]
+  },
+  {
+    "vendor_id": "vendor_d",
+    "page_id": "view_goods",
+    "url": "https://example-farm-d.test/shop/goods",
+    "requires_login": true,
+    "auth_state_label": "vendor_d",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Browse Our Food"]
+  },
+  {
+    "vendor_id": "vendor_d",
+    "page_id": "dairy_page",
+    "url": "https://example-farm-d.test/shop/dairy",
+    "requires_login": true,
+    "auth_state_label": "vendor_d",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Dairy"]
+  },
+  {
+    "vendor_id": "vendor_d",
+    "page_id": "butter_cheese",
+    "url": "https://example-farm-d.test/shop/dairy/butter-cheese",
+    "requires_login": true,
+    "auth_state_label": "vendor_d",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Butter", "Cheese"]
+  },
+  {
+    "vendor_id": "vendor_d",
+    "page_id": "eggs",
+    "url": "https://example-farm-d.test/shop/eggs",
+    "requires_login": true,
+    "auth_state_label": "vendor_d",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Eggs"]
+  },
+  {
+    "vendor_id": "vendor_b",
+    "page_id": "store",
+    "url": "https://example-farm-b.test/shop",
+    "requires_login": true,
+    "auth_state_label": "vendor_b",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Browse Store", "Shop By Category"]
+  },
+  {
+    "vendor_id": "vendor_b",
+    "page_id": "milk",
+    "url": "https://example-farm-b.test/shop/milk",
+    "requires_login": true,
+    "auth_state_label": "vendor_b",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Cow Milk"]
+  },
+  {
+    "vendor_id": "vendor_b",
+    "page_id": "butter_cream_and_ghee",
+    "url": "https://example-farm-b.test/shop/butter",
+    "requires_login": true,
+    "auth_state_label": "vendor_b",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Butter", "Cream"]
+  },
+  {
+    "vendor_id": "vendor_b",
+    "page_id": "milk_cheese",
+    "url": "https://example-farm-b.test/shop/cheese",
+    "requires_login": true,
+    "auth_state_label": "vendor_b",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Cheese"]
+  },
+  {
+    "vendor_id": "vendor_b",
+    "page_id": "eggs",
+    "url": "https://example-farm-b.test/shop/eggs",
+    "requires_login": true,
+    "auth_state_label": "vendor_b",
+    "login_url_patterns": ["/login", "sign-in", "signin", "account"],
+    "login_text_markers": ["sign in", "log in", "login", "password", "create account", "sign up for pricing", "need an account"],
+    "required_text_markers": ["Eggs"]
+  }
+]

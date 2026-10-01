@@ -1,0 +1,30 @@
+[
+  {
+    "id": "vendor_a",
+    "name": "Example Farm A",
+    "pickup_address": "Example Farm A",
+    "delivery_available": false,
+    "delivery_fee": 0.0,
+    "pickup_dropoff_available": false,
+    "ups_shipping_available": true,
+    "farm_truck_delivery_available": false,
+    "pickup_locations": [],
+    "ups_shipping_fee": 20.0,
+    "ups_packing_fee": 5.0,
+    "ups_cooler_fee": 8.0,
+    "farm_truck_delivery_fee": 0.0,
+    "handling_fee": 0.0,
+    "packing_fee": 0.0,
+    "cooler_fee": 0.0,
+    "service_fee": 0.0,
+    "minimum_order": 0.0,
+    "minimum_order_pickup_dropoff": 0.0,
+    "minimum_order_ups": 0.0,
+    "minimum_order_farm_truck_delivery": 0.0,
+    "source_type": "imported",
+    "website_url": "https://example-farm-a.test/",
+    "login_required": true,
+    "supports_authenticated_fetch": true,
+    "notes": "Imported vendor catalog; fulfillment defaults until parsed from website."
+  }
+]

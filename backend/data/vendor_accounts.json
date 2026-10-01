@@ -1,0 +1,265 @@
+[
+  {
+    "vendor_id": "vendor_a",
+    "auth_state_label": "vendor_a",
+    "vendor_name": "Example Farm A",
+    "login_url": "https://example-farm-a.test/sign-in/",
+    "account_url": "https://example-farm-a.test/my-account/",
+    "session_mode": "persistent_profile",
+    "browser_channel": "chrome",
+    "username_selectors": [
+      "#eael-user-login",
+      "input[type='email']",
+      "input[name='email']",
+      "input[name='username']",
+      "input[id*='email']",
+      "input[autocomplete='username']"
+    ],
+    "password_selectors": [
+      "#eael-user-password",
+      "input[type='password']",
+      "input[name='password']",
+      "input[id*='password']",
+      "input[autocomplete='current-password']"
+    ],
+    "submit_selectors": [
+      "#eael-login-submit",
+      "button[type='submit']",
+      "input[type='submit']",
+      "button:has-text('Login')",
+      "button:has-text('Sign in')",
+      "button:has-text('Log in')"
+    ],
+    "login_success_markers": [
+      "already logged in",
+      "logout",
+      "log out",
+      "my account",
+      "account details",
+      "orders",
+      "dashboard",
+      "membership",
+      "edit account",
+      "hello"
+    ],
+    "login_failure_markers": [
+      "invalid",
+      "incorrect",
+      "failed",
+      "unknown email",
+      "lost your password"
+    ],
+    "captcha_markers": [
+      "recaptcha",
+      "g-recaptcha",
+      "hcaptcha",
+      "verify you are human",
+      "captcha"
+    ],
+    "two_factor_markers": [
+      "two-factor",
+      "two factor",
+      "2fa",
+      "verification code",
+      "one-time code"
+    ],
+    "post_login_check_url": "https://example-farm-a.test/my-account/",
+    "min_fetch_interval_hours": 24
+  },
+  {
+    "vendor_id": "vendor_c",
+    "auth_state_label": "vendor_c",
+    "vendor_name": "Example Farm C",
+    "login_url": "https://example-farm-c.test/login",
+    "account_url": "https://example-farm-c.test/account",
+    "session_mode": "persistent_profile",
+    "auth_strategy": "external_browser_handoff",
+    "captcha_sensitive": true,
+    "browser_channel": "chrome",
+    "username_selectors": [
+      "input[type='email']",
+      "input[name='email']",
+      "input[name='username']",
+      "input[id*='email']",
+      "input[autocomplete='username']",
+      "#username",
+      "#email"
+    ],
+    "password_selectors": [
+      "input[type='password']",
+      "input[name='password']",
+      "input[id*='password']",
+      "input[autocomplete='current-password']",
+      "#password"
+    ],
+    "submit_selectors": [
+      "button[type='submit']",
+      "input[type='submit']",
+      "button:has-text('Login')",
+      "button:has-text('Sign in')",
+      "button:has-text('Log in')"
+    ],
+    "login_success_markers": [
+      "account",
+      "logout",
+      "log out",
+      "orders",
+      "profile"
+    ],
+    "login_failure_markers": [
+      "invalid",
+      "incorrect",
+      "failed",
+      "try again",
+      "forgot password"
+    ],
+    "captcha_markers": [
+      "recaptcha",
+      "reCAPTCHA verification failed",
+      "g-recaptcha",
+      "hcaptcha",
+      "verify you are human",
+      "captcha verification failed",
+      "please contact support",
+      "captcha"
+    ],
+    "two_factor_markers": [
+      "two-factor",
+      "two factor",
+      "2fa",
+      "verification code",
+      "one-time code"
+    ],
+    "post_login_check_url": "https://example-farm-c.test/account",
+    "min_fetch_interval_hours": 24
+  },
+  {
+    "vendor_id": "vendor_d",
+    "auth_state_label": "vendor_d",
+    "vendor_name": "Example Farm D",
+    "login_url": "https://example-farm-d.test/login",
+    "account_url": "https://example-farm-d.test/account",
+    "session_mode": "persistent_profile",
+    "auth_strategy": "external_browser_handoff",
+    "captcha_sensitive": true,
+    "browser_channel": "chrome",
+    "username_selectors": [
+      "input[type='email']",
+      "input[name='email']",
+      "input[name='username']",
+      "input[id*='email']",
+      "input[autocomplete='username']",
+      "#username",
+      "#email"
+    ],
+    "password_selectors": [
+      "input[type='password']",
+      "input[name='password']",
+      "input[id*='password']",
+      "input[autocomplete='current-password']",
+      "#password"
+    ],
+    "submit_selectors": [
+      "button[type='submit']",
+      "input[type='submit']",
+      "button:has-text('Login')",
+      "button:has-text('Sign in')",
+      "button:has-text('Log in')"
+    ],
+    "login_success_markers": [
+      "account",
+      "logout",
+      "log out",
+      "orders",
+      "profile"
+    ],
+    "login_failure_markers": [
+      "invalid",
+      "incorrect",
+      "failed",
+      "try again",
+      "forgot password"
+    ],
+    "captcha_markers": [
+      "recaptcha",
+      "reCAPTCHA verification failed",
+      "g-recaptcha",
+      "hcaptcha",
+      "verify you are human",
+      "captcha verification failed",
+      "please contact support",
+      "captcha"
+    ],
+    "two_factor_markers": [
+      "two-factor",
+      "two factor",
+      "2fa",
+      "verification code",
+      "one-time code"
+    ],
+    "post_login_check_url": "https://example-farm-d.test/account",
+    "min_fetch_interval_hours": 24
+  },
+  {
+    "vendor_id": "vendor_b",
+    "auth_state_label": "vendor_b",
+    "vendor_name": "Example Farm B",
+    "login_url": "https://example-farm-b.test/login",
+    "account_url": "https://example-farm-b.test/account",
+    "session_mode": "persistent_profile",
+    "browser_channel": "chrome",
+    "username_selectors": [
+      "input[type='email']",
+      "input[name='email']",
+      "input[name='username']",
+      "input[id*='email']",
+      "input[autocomplete='username']",
+      "#username",
+      "#email"
+    ],
+    "password_selectors": [
+      "input[type='password']",
+      "input[name='password']",
+      "input[id*='password']",
+      "input[autocomplete='current-password']",
+      "#password"
+    ],
+    "submit_selectors": [
+      "button[type='submit']",
+      "input[type='submit']",
+      "button:has-text('Login')",
+      "button:has-text('Sign in')",
+      "button:has-text('Log in')"
+    ],
+    "login_success_markers": [
+      "account",
+      "logout",
+      "log out",
+      "orders",
+      "profile"
+    ],
+    "login_failure_markers": [
+      "invalid",
+      "incorrect",
+      "failed",
+      "try again",
+      "forgot password"
+    ],
+    "captcha_markers": [
+      "recaptcha",
+      "g-recaptcha",
+      "hcaptcha",
+      "verify you are human",
+      "captcha"
+    ],
+    "two_factor_markers": [
+      "two-factor",
+      "two factor",
+      "2fa",
+      "verification code",
+      "one-time code"
+    ],
+    "post_login_check_url": "https://example-farm-b.test/account",
+    "min_fetch_interval_hours": 24
+  }
+]
