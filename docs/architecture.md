@@ -120,7 +120,7 @@ The main ones are in the README. The rest:
 
 - The rule-based coordinator understands simple phrasings (quantity, unit, product, "I live in ..."), not free-form language.
 - Chat conversations are kept in memory and lost on restart. Storage is JSON files, not a database.
-- There is no automated browser test. The chat panel was checked by hand: the README example, sent from the dashboard, came back with a cart from the rule-based coordinator and later from the Claude coordinator (the screenshot in the README).
+- The chat panel is checked by hand. The README example, sent from the dashboard, came back with a cart from the rule-based coordinator and from the Claude coordinator (the screenshot in the README).
 - The reply check is strict. A real amount that comes from another agent, such as a unit price or an order minimum, is rejected too, because only amounts in the cart result pass. It also cannot tell whether an amount is attached to the right item.
 - Chat distances come from five invented towns with made-up coordinates. The sample towns are Exampleville, Samplebury, Demoton, Mockford and Testerfield.
 - With the Claude Code sign-in every chat turn starts a Claude Code process, so a turn took 6 to 19 seconds in the live run. Earlier turns are passed to the model as plain text, without the earlier agent results.

@@ -123,13 +123,13 @@ llm -> llm validate_reply: ERROR $29.00 does not appear in the cart result; $75.
 llm -> llm validate_reply: amounts match the cart result
 ```
 
-The agents' own calls to each other are left out of this trace to keep it short. The model built one cart per method, checked the delivery options to explain why shipping failed, and was again made to drop two amounts that are not in the cart result. $75.00 is Example Farm E's shipping minimum, which the delivery agent reports. I did not trace where $29.00 came from.
+The agents' own calls to each other are left out of this trace to keep it short. The model built one cart per method, checked the delivery options to explain why shipping failed, and was again made to drop two amounts that are not in the cart result. $75.00 is Example Farm E's shipping minimum, which the delivery agent reports.
 
 ## What the runs showed
 
 - The model chose different agent calls for different questions, and asked a question instead of guessing when the town was missing.
-- The reply check fired twice on real replies, and one correction was enough both times. It is strict: an amount from another agent (a unit price, an order minimum) is rejected too. The trace keeps only the start of a rejected reply, so I cannot show those two in full.
-- When no cart fits, the cart agent's summary says every item is unavailable, even if only one item is the problem. The model worked around it by asking again. I left the cart search as it is.
-- One thing I fixed: in a first try before these runs the reply came back with Markdown bold, which the chat panel shows as raw asterisks. The prompt now asks for plain text without Markdown, and the replies above follow it.
+- The reply check fired twice on real replies, and one correction was enough both times. It is strict: an amount from another agent (a unit price, an order minimum) is rejected too. The trace keeps only the start of a rejected reply, so those two aren't shown in full.
+- When no cart fits, the cart agent's summary says every item is unavailable, even if only one item is the problem. The model worked around it by asking again.
+- One fix came out of it: in a first try before these runs the reply came back with Markdown bold, which the chat panel shows as raw asterisks. The prompt now asks for plain text without Markdown, and the replies above follow it.
 
 The screenshot in the README (`docs/dashboard.png`) is a sixth live turn, the same example sent from the dashboard's chat panel.

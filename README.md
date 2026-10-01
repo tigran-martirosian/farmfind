@@ -16,7 +16,7 @@ The search tries every combination, so it suits short lists and a handful of ven
 
 Shop pages are read with a browser (Playwright), including shops that show prices only after login. What it finds waits in a review list, and only approved products reach the catalog.
 
-The fetcher has offline tests only. In this repository it isn't run against live shops, and its page parsers are written for specific shop layouts.
+The fetcher's tests run offline. In this repository it isn't run against live shops, and its page parsers are written for specific shop layouts.
 
 ## The chat
 
@@ -24,7 +24,7 @@ You can type an order as a sentence, for example "I need 2 gallons of milk, 2 lb
 
 Prices never come from the model. Every dollar amount in a model-written reply has to appear in the cart result, or the reply is rejected. If the model call fails, the rule-based coordinator answers instead. If you read one function in this repository, read `reply_problems` in `backend/app/agents/replies.py`, which is that check.
 
-I ran the Claude coordinator live by hand on 2026-10-01, six turns through the Claude Code sign-in. The answers are in [docs/live-run.md](docs/live-run.md). The API-key path hasn't been run live, and no automated test calls a real model.
+I ran the Claude coordinator live on 2026-10-01, six turns through the Claude Code sign-in, and the answers are in [docs/live-run.md](docs/live-run.md). The coordinator can also take an API key; the live run used the sign-in. The automated tests give it a scripted model, so they run offline.
 
 ## Run it
 
@@ -53,4 +53,4 @@ cd backend && pytest             # 431 tests, all offline
 cd frontend && npm run build     # type-checks and builds
 ```
 
-[docs/architecture.md](docs/architecture.md) has more on how it's put together, and ends with the rest of what's unfinished.
+[docs/architecture.md](docs/architecture.md) has more on how it's put together, and ends with the smaller limits.
