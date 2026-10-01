@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Node / build output
+node_modules/
+dist/
+build/
+
+# Secrets and local settings
+.env
+.env.*
+!.env.example
+
+# Saved logins, browser profiles, cookies
+backend/.auth/
+backend/.browser_profiles/
+backend/data/external_browser_profiles/
+*storage_state*.json
+
+# Local runtime data (fetched pages, screenshots, diagnostics, state)
+backend/data/fetches/
+backend/data/diagnostics/
+backend/data/import_candidates/
+backend/data/shipping_quotes/
+backend/data/staged_products.json
+backend/data/vendor_connections.json
+backend/data/vendor_credentials.json
+
+# Logs, databases, archives, OS files
+*.log
+*.db
+*.sqlite
+*.zip
+.DS_Store
+.idea/

@@ -1,0 +1,4 @@
+# Optional: only needed when a Claude model coordinates the chat.
+# Without these chat uses the rule-based coordinator.
+claude-agent-sdk>=0.2   # FARMFIND_COORDINATOR=claude_code (Claude Code sign-in)
+anthropic>=1.0          # ANTHROPIC_API_KEY (Claude API)
