@@ -67,27 +67,12 @@ The search tries every combination, so it suits short lists and small catalogs.
 
 The rule-based coordinator calls the agents in this order. The Claude coordinator may choose a different one.
 
-```mermaid
-sequenceDiagram
-  participant U as User
-  participant C as Coordinator
-  participant Cat as CatalogAgent
-  participant Del as DeliveryAgent
-  participant Dis as DistanceAgent
-  participant Cart as CartAgent
-  U->>C: "2 gallons of milk ... I live in Exampleville"
-  C->>Cat: find_suppliers(items)
-  Cat-->>C: vendors, stock, unit prices
-  C->>Dis: measure_distances(town)
-  Dis-->>C: town recognised
-  C->>Del: check_fulfillment(town, vendors)
-  Del->>Dis: measure_distances(town, vendors)
-  Dis-->>Del: miles per vendor and pickup point
-  Del-->>C: methods and fees per vendor
-  C->>Cart: build_cart(items, preferences, delivery)
-  Cart-->>C: best cart, alternatives, total
-  C-->>U: reply, recommendation, agent trace
-```
+1. Coordinator to `CatalogAgent`: `find_suppliers(items)` returns the vendors, stock and unit prices.
+2. Coordinator to `DistanceAgent`: `measure_distances(town)` confirms the town is recognised.
+3. Coordinator to `DeliveryAgent`: `check_fulfillment(town, vendors)` returns the methods and fees per vendor. To answer, the delivery agent asks `DistanceAgent` itself: `measure_distances(town, vendors)` returns the miles per vendor and pickup point.
+4. Coordinator to `CartAgent`: `build_cart(items, preferences, delivery)` returns the best cart, the alternatives and the total.
+
+The turn starts with the user's message ("2 gallons of milk ... I live in Exampleville") and ends with the coordinator's reply, the recommendation and the agent trace.
 
 What the model can do is kept narrow. Its tool input is checked by the bus, and a bad call goes back to it as an error. Its `build_cart` tool does not accept delivery data, so it cannot hand the cart search its own fees or distances.
 
