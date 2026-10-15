@@ -56,3 +56,7 @@ cd frontend && npm run build     # type-checks and builds
 ```
 
 [docs/architecture.md](docs/architecture.md) has more on how it's put together, and ends with the smaller limits.
+
+## License
+
+See [LICENSE](LICENSE).
