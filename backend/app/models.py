@@ -44,6 +44,7 @@ class Vendor(BaseModel):
         name: str
         address: str
         distance_miles: float = 0.0
+        drive_minutes: float | None = None
         pickup_fee: float = 0.0
         pickup_handling_fee: float = 0.0
         notes: str = ""
@@ -65,6 +66,9 @@ class Vendor(BaseModel):
     ups_shipping_fee: float = 0.0
     ups_packing_fee: float = 0.0
     ups_cooler_fee: float = 0.0
+    ups_rate_per_lb: float = 0.0
+    pickup_rate_per_lb: float = 0.0
+    free_pickup_threshold: float | None = None
     farm_truck_delivery_fee: float = 0.0
     per_package_fee: float = 0.0
     per_cold_item_fee: float = 0.0

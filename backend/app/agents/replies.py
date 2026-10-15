@@ -50,17 +50,14 @@ def compose_reply(request: ShoppingRequest, result: CartResult, unknown_items: l
     lines: list[str] = []
     if cart.selected_items:
         where = f" for {request.location}" if request.location else ""
+        lines.append(f"Best order{where}: {money(cart.total_estimated_cost)} total")
         lines.append(
-            f"Best order{where}: {money(cart.total_estimated_cost)} total "
-            f"({money(cart.item_cost_total)} items + {money(cart.fulfillment_cost_total)} fulfillment)."
+            f"{money(cart.item_cost_total)} items + "
+            f"{money(cart.fulfillment_cost_total)} shipping/pickup"
         )
-        sources = "; ".join(
-            f"{choice.vendor_name}, {_describe(choice)}" for choice in result.fulfillment
-        )
-        if sources:
-            lines[0] += f" From {sources}."
+        lines.extend(f"• {choice.vendor_name}: {_describe(choice)}" for choice in result.fulfillment)
         if cart.alternative_carts:
-            lines[0] += f" Cheapest of {len(cart.alternative_carts) + 1} carts compared."
+            lines.append(f"Cheapest of {len(cart.alternative_carts) + 1} carts compared.")
     else:
         lines.append("I could not build a cart for this request.")
     for item in cart.unavailable_items:

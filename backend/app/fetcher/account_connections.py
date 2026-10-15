@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import socket
+from urllib.parse import urlparse
 
 from .models import (
     ConnectionActionRequired,
@@ -24,6 +25,7 @@ from .detection import (
     detect_fetch_status,
     detected_markers,
     has_real_price_or_order_controls,
+    looks_signed_out,
     pricing_lock_markers,
     store_access_markers,
     strong_captcha_markers,
@@ -53,6 +55,7 @@ from .storage import (
     load_vendor_pages,
     external_browser_profile_path,
     persistent_profile_path,
+    readiness_page_id as configured_readiness_page_id,
     save_vendor_connection,
     vendor_account_config,
     write_login_attempt_diagnostics,
@@ -239,7 +242,9 @@ def classify_page_safely(
             "login_required",
             "Browser was closed before login could be verified.",
         )
-    if verification["is_connected"]:
+    # Success words ("account", "orders") also sit on signed-out pages, so a
+    # visible sign-in link or locked prices overrule them.
+    if verification["is_connected"] and not looks_signed_out(safe_page_content(page)):
         return "connected", None, None
     if verification["detected_captcha_markers"]:
         return "action_required", "captcha_required", None
@@ -395,16 +400,25 @@ def update_connection_status(
     )
 
 
+def _same_page(url_a: str, url_b: str) -> bool:
+    a, b = urlparse(url_a), urlparse(url_b)
+    return (
+        a.netloc.lower().removeprefix("www.") == b.netloc.lower().removeprefix("www.")
+        and a.path.rstrip("/").lower() == b.path.rstrip("/").lower()
+    )
+
+
 def classify_connection_result(
     target: VendorPageTarget,
     html: str,
     final_url: str,
     config: VendorConnectionConfig | None = None,
 ) -> tuple[ConnectionStatus, ConnectionActionRequired | None]:
+    fetch_status = detect_fetch_status(target, html, final_url)
     if config is not None:
         if real_captcha_markers(html, html, config):
             return "action_required", "captcha_required"
-        if detect_fetch_status(target, html, final_url) == "success":
+        if fetch_status == "success":
             return "connected", None
         if (
             detected_markers(html, config.two_factor_markers)
@@ -412,11 +426,19 @@ def classify_connection_result(
             else two_factor_challenge_markers(html)
         ):
             return "action_required", "two_factor_required"
-        if detected_markers(html, config.login_failure_markers):
+        # "Lost your password" sits on many shop pages; it means a rejected
+        # password only on the login page itself.
+        on_login_page = bool(config.login_url) and _same_page(final_url, config.login_url)
+        if on_login_page and detected_markers(html, config.login_failure_markers):
             return "failed", "credential_update_required"
-        if detected_markers(html, config.login_success_markers):
+        if fetch_status == "login_required":
+            return "action_required", "login_required"
+        # Words like "account" also appear on a logged-out page ("Create account"),
+        # so they count only when the page itself does not say logged out or locked.
+        if fetch_status not in {"auth_expired", "pricing_locked", "store_access_required"} and detected_markers(
+            html, config.login_success_markers
+        ):
             return "connected", None
-    fetch_status = detect_fetch_status(target, html, final_url)
     if fetch_status == "success":
         return "connected", None
     if fetch_status == "captcha_required":
@@ -445,20 +467,13 @@ def check_target_for_vendor(vendor_id: str) -> VendorPageTarget | None:
     )
 
 
-READINESS_PAGE_BY_VENDOR = {
-    "vendor_b": "milk",
-    "vendor_c": "dairy",
-    "vendor_d": "dairy_page",
-}
-
-
 def readiness_target_for_vendor(vendor_id: str) -> VendorPageTarget | None:
     if check_target_for_vendor(vendor_id) is None:
         return None
     targets = [target for target in load_vendor_pages() if target.vendor_id == vendor_id]
     if not targets:
         return None
-    readiness_page_id = READINESS_PAGE_BY_VENDOR.get(vendor_id, targets[0].page_id)
+    readiness_page_id = configured_readiness_page_id(vendor_id, targets[0].page_id)
     return next((target for target in targets if target.page_id == readiness_page_id), targets[0])
 
 
@@ -597,8 +612,13 @@ def connect_vendor_account(vendor_id: str) -> VendorAccountConnection:
     return login_vendor_with_saved_credentials(vendor_id)
 
 
-def login_vendor_with_saved_credentials(vendor_id: str) -> VendorAccountConnection:
-    """Log into a vendor using saved OS-keyring credentials and a persistent profile."""
+def login_vendor_with_saved_credentials(vendor_id: str, show_browser: bool = False) -> VendorAccountConnection:
+    """Log into a vendor using saved OS-keyring credentials and a persistent profile.
+
+    Runs in a hidden browser. Anything that needs a person (a captcha, a code,
+    fields it cannot find) ends the attempt with that status; ``show_browser``
+    opens a window instead and waits for the person to finish and press Enter.
+    """
     from playwright.sync_api import sync_playwright
 
     config = connection_config_or_default(vendor_id)
@@ -632,17 +652,20 @@ def login_vendor_with_saved_credentials(vendor_id: str) -> VendorAccountConnecti
         )
     profile_path = session_profile_path(vendor_id)
     profile_path.mkdir(parents=True, exist_ok=True)
-    target = check_target_for_vendor(vendor_id) or VendorPageTarget(
+    # Judge "logged in" on the farm's readiness page, never on the login page:
+    # a login page says nothing about member prices.
+    target = readiness_target_for_vendor(vendor_id) or VendorPageTarget(
         vendor_id=vendor_id,
         page_id="account",
         url=config.login_url,
         requires_login=True,
         auth_state_label=config.auth_state_label,
     )
+    separate_readiness_page = bool(target.url) and not _same_page(target.url, config.login_url)
     with sync_playwright() as playwright:
         context = playwright.chromium.launch_persistent_context(
             user_data_dir=str(profile_path),
-            headless=False,
+            headless=not show_browser,
             channel=config.browser_channel or None,
         )
         page = context.new_page()
@@ -651,8 +674,10 @@ def login_vendor_with_saved_credentials(vendor_id: str) -> VendorAccountConnecti
         status: ConnectionStatus = "action_required"
         action_required: ConnectionActionRequired | None = "login_required"
         try:
-            page.goto(config.login_url, wait_until="domcontentloaded")
+            page.goto(target.url or config.login_url, wait_until="domcontentloaded")
             status, action_required, verify_error = classify_page_safely(target, page, config)
+            if separate_readiness_page and status != "connected":
+                page.goto(config.login_url, wait_until="domcontentloaded")
             if status == "connected":
                 context.close()
                 return update_connection_status(
@@ -680,6 +705,8 @@ def login_vendor_with_saved_credentials(vendor_id: str) -> VendorAccountConnecti
                     found_selectors=found_selectors,
                     error_message=error_message,
                 )
+                if not show_browser:
+                    raise RuntimeError(error_message)
                 print(
                     "Could not find login fields automatically. Please log in manually "
                     "in the opened browser, then press Enter."
@@ -696,6 +723,15 @@ def login_vendor_with_saved_credentials(vendor_id: str) -> VendorAccountConnecti
                 except Exception:
                     page.wait_for_load_state("load", timeout=15000)
             status, action_required, verify_error = classify_page_safely(target, page, config)
+            # A rejected password or a challenge shows on the page the form led to;
+            # otherwise the readiness page decides whether member prices are visible.
+            if separate_readiness_page and not verify_error and action_required not in {
+                "credential_update_required",
+                "captcha_required",
+                "two_factor_required",
+            }:
+                page.goto(target.url, wait_until="domcontentloaded")
+                status, action_required, verify_error = classify_page_safely(target, page, config)
             if verify_error:
                 error_message = verify_error
         except Exception as exc:  # noqa: BLE001 - login failures become metadata.
@@ -711,7 +747,7 @@ def login_vendor_with_saved_credentials(vendor_id: str) -> VendorAccountConnecti
                 found_selectors=found_selectors,
                 error_message=error_message,
             )
-            if error_message == "Browser was closed before login could be verified.":
+            if error_message == "Browser was closed before login could be verified." or not show_browser:
                 status = "action_required"
                 action_required = "login_required"
             else:
@@ -742,6 +778,7 @@ def login_vendor_with_saved_credentials(vendor_id: str) -> VendorAccountConnecti
                 found_selectors=found_selectors,
                 error_message=f"Human action required: {action_required}.",
             )
+        if action_required in {"captcha_required", "two_factor_required"} and show_browser:
             input(
                 "Human action required in browser. Complete CAPTCHA/2FA/login "
                 "challenge, then press Enter."

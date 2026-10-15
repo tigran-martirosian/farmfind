@@ -13,6 +13,8 @@ from .schemas import (
 
 EPS = 1e-9
 FULFILLMENT_METHODS = ("pickup_dropoff", "ups_shipping", "farm_truck_delivery")
+# Rough shipping weight of one normalized unit, for farms that charge by the pound.
+POUNDS_PER_UNIT = {"gallon": 8.6, "pint": 1.05, "lb": 1.0, "count": 0.13}
 
 
 def vendor_pickup_available(vendor: Vendor) -> bool:
@@ -72,6 +74,14 @@ def selected_cold_item_count(items: list[SelectedItem]) -> int:
     )
 
 
+def estimated_weight_lb(items: list[SelectedItem]) -> float:
+    return sum(
+        pkg.package_count * pkg.package_quantity * POUNDS_PER_UNIT[pkg.package_unit]
+        for item in items
+        for pkg in item.packages
+    )
+
+
 def line_based_fees(vendor: Vendor, package_count: int, cold_item_count: int) -> float:
     return (
         package_count * vendor.per_package_fee
@@ -91,6 +101,8 @@ def quote_metadata(vendor: Vendor, fulfillment: float, line_fee: float) -> tuple
             vendor.ups_shipping_fee,
             vendor.ups_packing_fee,
             vendor.ups_cooler_fee,
+            vendor.ups_rate_per_lb,
+            vendor.pickup_rate_per_lb,
             vendor.farm_truck_delivery_fee,
             vendor.minimum_order,
             vendor.minimum_order_pickup_dropoff or 0.0,
@@ -152,6 +164,12 @@ def build_cart_plan(
         package_count = selected_package_count(vendor_items)
         cold_item_count = selected_cold_item_count(vendor_items)
         selected_line_fee = line_based_fees(vendor, package_count, cold_item_count)
+        weight_lb = estimated_weight_lb(vendor_items)
+        pickup_weight_fee = (
+            0.0
+            if vendor.free_pickup_threshold is not None and vendor_item_total >= vendor.free_pickup_threshold
+            else vendor.pickup_rate_per_lb * weight_lb
+        )
         valid_breakdowns: list[VendorBreakdown] = []
 
         def all_items_support(method: str) -> bool:
@@ -193,21 +211,35 @@ def build_cart_plan(
                         address=vendor.pickup_address,
                     )
                 ]
-                for location in pickup_locations:
-                    if (
-                        request.max_pickup_distance_miles is not None
-                        and location.distance_miles > request.max_pickup_distance_miles
-                    ):
-                        continue
-                    travel = travel_cost(location.distance_miles, request)
-                    vendor_fees = shared_vendor_fees(vendor)
-                    fulfillment = (
+                vendor_fees = shared_vendor_fees(vendor)
+
+                def pickup_cost(location: Vendor.PickupLocation) -> float:
+                    return (
                         location.pickup_fee
                         + location.pickup_handling_fee
                         + vendor_fees
+                        + pickup_weight_fee
                         + selected_line_fee
-                        + travel
+                        + travel_cost(location.distance_miles, request)
                     )
+
+                reachable = [
+                    location
+                    for location in pickup_locations
+                    if not (
+                        request.max_pickup_distance_miles is not None
+                        and location.distance_miles > request.max_pickup_distance_miles
+                    )
+                    and not (
+                        request.max_pickup_minutes is not None
+                        and location.drive_minutes is not None
+                        and location.drive_minutes > request.max_pickup_minutes
+                    )
+                ]
+                # Every site shares the vendor's minimum, so only the cheapest one can be chosen.
+                for location in [min(reachable, key=pickup_cost)] if reachable else []:
+                    travel = travel_cost(location.distance_miles, request)
+                    fulfillment = pickup_cost(location)
                     quote_source, quote_status, quote_warnings = quote_metadata(
                         vendor, fulfillment, selected_line_fee
                     )
@@ -233,10 +265,12 @@ def build_cart_plan(
                             pickup_location_name=location.name,
                             pickup_address=location.address,
                             pickup_distance_miles=location.distance_miles,
+                            pickup_drive_minutes=location.drive_minutes,
                             pickup_travel_cost=round(travel, 2),
                             pickup_fee=location.pickup_fee,
                             pickup_handling_fee=location.pickup_handling_fee,
                             pickup_vendor_fees=round(vendor_fees, 2),
+                            pickup_weight_fee=round(pickup_weight_fee, 2),
                             per_package_fee=round(package_count * vendor.per_package_fee, 2),
                             per_cold_item_fee=round(cold_item_count * vendor.per_cold_item_fee, 2),
                             warnings=quote_warnings,
@@ -245,13 +279,16 @@ def build_cart_plan(
 
         if "ups_shipping" in methods and vendor_ups_available(vendor) and all_items_support("ups_shipping"):
             ups_shipping_fee = vendor.ups_shipping_fee or vendor.delivery_fee
+            ups_weight_fee = vendor.ups_rate_per_lb * weight_lb
             if (
                 vendor.free_shipping_threshold is not None
                 and vendor_item_total >= vendor.free_shipping_threshold
             ):
                 ups_shipping_fee = 0.0
+                ups_weight_fee = 0.0
             fulfillment = (
                 ups_shipping_fee
+                + ups_weight_fee
                 + vendor.ups_packing_fee
                 + vendor.ups_cooler_fee
                 + shared_vendor_fees(vendor)
@@ -282,6 +319,8 @@ def build_cart_plan(
                     ups_shipping_fee=ups_shipping_fee,
                     ups_packing_fee=vendor.ups_packing_fee,
                     ups_cooler_fee=vendor.ups_cooler_fee,
+                    ups_weight_fee=round(ups_weight_fee, 2),
+                    estimated_weight_lb=round(weight_lb, 1) if vendor.ups_rate_per_lb else None,
                     per_package_fee=round(package_count * vendor.per_package_fee, 2),
                     per_cold_item_fee=round(cold_item_count * vendor.per_cold_item_fee, 2),
                 )

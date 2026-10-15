@@ -116,4 +116,4 @@ The agents' own calls to each other are left out of this trace to keep it short.
 - When no cart fits, the cart agent's summary says every item is unavailable, even if only one item is the problem. The model worked around it by asking again.
 - One fix came out of it: in a first try before these runs the reply came back with Markdown bold, which the chat panel shows as raw asterisks. The prompt now asks for plain text without Markdown, and the replies above follow it.
 
-The screenshot in the README (`docs/dashboard.png`) is a sixth live turn, the same example sent from the dashboard's chat panel.
+The screenshot in the README (`docs/dashboard.png`) is not one of these turns: it shows the item list and the cart it found, from a later run on real farm prices.

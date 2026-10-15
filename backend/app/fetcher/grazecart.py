@@ -38,8 +38,6 @@ from .offer_validation import (
     validate_offer,
 )
 
-GRAZECART_VENDORS = {"vendor_b", "vendor_c", "vendor_d"}
-
 # Product types the optimizer actually supports. GrazeCart cheese subtypes are
 # mapped into the app's current single cheese bucket.
 SUPPORTED_CANONICAL = {"cow_milk", "sheep_milk", "cream", "butter", "eggs", "cheese"}
@@ -519,6 +517,9 @@ def _collect_option_rows(html: str) -> list[dict]:
     return deduped
 
 
+_INFER_FROM_TEXT = object()
+
+
 def _build_variant(
     *,
     title: str,
@@ -526,8 +527,11 @@ def _build_variant(
     total_price: float | None,
     price_text: str | None,
     reported_savings_text: str | None,
+    product_type=_INFER_FROM_TEXT,
 ) -> CapturedProductVariant:
-    product_type = infer_product_type(label) or infer_product_type(title)
+    # Callers with their own type rules pass product_type (None = not a product we track).
+    if product_type is _INFER_FROM_TEXT:
+        product_type = infer_product_type(label) or infer_product_type(title)
     offer_text = " ".join(item for item in [title, label, price_text or "", reported_savings_text or ""] if item)
     quantity = parse_quantity(label, product_type)
     if quantity.total_equivalent_quantity is None:

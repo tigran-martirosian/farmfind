@@ -21,6 +21,7 @@ class NormalizedProduct(Product):
     unit_price: float | None = None
     excluded: bool = False
     exclusion_reason: str | None = None
+    variety: str | None = None
     # Display fields: clean human-readable name + only order-relevant tags.
     display_name: str | None = None
     display_tags: list[str] = []
@@ -95,6 +96,7 @@ class OptimizeItem(BaseModel):
     packaging_preference: PackagingPreference | None = None
     storage_preference: StoragePreference | None = None
     salt_preference: SaltPreference | None = None
+    variety: str | None = Field(default=None, description='A cheese kind such as "Cheddar"; empty means any.')
 
     @model_validator(mode="after")
     def set_product_aliases(self) -> "OptimizeItem":
@@ -134,6 +136,8 @@ class OptimizeRequest(BaseModel):
     fuel_price_per_gallon: float | None = Field(default=None, ge=0)
     use_round_trip_pickup_cost: bool = True
     max_pickup_distance_miles: float | None = Field(default=None, ge=0)
+    location: str | None = Field(default=None, description="Town or zip code; pickup is then measured as a drive.")
+    max_pickup_minutes: float | None = Field(default=40, ge=0)
     use_subscription_pricing: bool = False
     packaging_preference: PackagingPreference = "any"
     include_returnable_deposits_in_total: bool = False
@@ -275,13 +279,17 @@ class VendorBreakdown(BaseModel):
     pickup_location_name: str | None = None
     pickup_address: str | None = None
     pickup_distance_miles: float | None = None
+    pickup_drive_minutes: float | None = None
     pickup_travel_cost: float = 0.0
     pickup_fee: float = 0.0
     pickup_handling_fee: float = 0.0
     pickup_vendor_fees: float = 0.0
+    pickup_weight_fee: float = 0.0
     ups_shipping_fee: float = 0.0
     ups_packing_fee: float = 0.0
     ups_cooler_fee: float = 0.0
+    ups_weight_fee: float = 0.0
+    estimated_weight_lb: float | None = None
     per_package_fee: float = 0.0
     per_cold_item_fee: float = 0.0
     farm_truck_delivery_fee: float = 0.0
@@ -319,6 +327,7 @@ class CartPlan(BaseModel):
 
 
 class OptimizeResponse(BaseModel):
+    location: str | None = Field(default=None, description="The place pickup drives were measured from.")
     selected_items: list[SelectedItem]
     unavailable_items: list[UnavailableItem]
     delivery_charges: list[DeliveryCharge]

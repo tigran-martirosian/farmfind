@@ -6,6 +6,7 @@ import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlparse
 
 from .models import (
     FetchArtifacts,
@@ -16,8 +17,9 @@ from .models import (
     VendorPageTarget,
 )
 
-BACKEND_DIR = Path(__file__).resolve().parents[2]
-DATA_DIR = BACKEND_DIR / "data"
+from ..paths import BACKEND_DIR, FARMS_DIR
+
+DATA_DIR = FARMS_DIR
 AUTH_DIR = BACKEND_DIR / ".auth"
 BROWSER_PROFILES_DIR = BACKEND_DIR / ".browser_profiles"
 EXTERNAL_BROWSER_PROFILES_DIR = DATA_DIR / "external_browser_profiles"
@@ -78,6 +80,31 @@ def vendor_account_config(vendor_id: str) -> VendorConnectionConfig | None:
         (config for config in load_vendor_account_configs() if config.vendor_id == vendor_id),
         None,
     )
+
+
+def is_grazecart_vendor(vendor_id: str) -> bool:
+    config = vendor_account_config(vendor_id)
+    return config is not None and config.platform == "grazecart"
+
+
+def is_uddermilk_vendor(vendor_id: str) -> bool:
+    config = vendor_account_config(vendor_id)
+    return config is not None and config.platform == "uddermilk"
+
+
+def vendor_store_host(vendor_id: str) -> str | None:
+    """The farm's store host, taken from its login URL (no "www.")."""
+    config = vendor_account_config(vendor_id)
+    if config is None or not config.login_url:
+        return None
+    return (urlparse(config.login_url).netloc or "").lower().removeprefix("www.") or None
+
+
+def readiness_page_id(vendor_id: str, default: str) -> str:
+    config = vendor_account_config(vendor_id)
+    if config is None or config.readiness_page_id is None:
+        return default
+    return config.readiness_page_id
 
 
 def load_credential_metadata(

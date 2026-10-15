@@ -14,7 +14,6 @@ from .account_connections import (
     login_all_vendors,
     login_vendor_with_saved_credentials,
 )
-from .account_connections import READINESS_PAGE_BY_VENDOR as GRAZECART_READINESS_PAGE
 from .credentials import (
     get_vendor_credential_status,
     set_vendor_credentials,
@@ -22,6 +21,7 @@ from .credentials import (
 from .import_candidates import create_import_candidates_from_variant_snapshot
 from .models import FetchMetadata, FetchServiceResult, ShippingQuote, VendorConnectionMetadata, VendorFetchSummary, VendorPageTarget
 from .shipping_quote import build_shipping_quote_from_html
+from .storage import readiness_page_id as configured_readiness_page_id
 from .storage import (
     DATA_DIR,
     list_fetch_metadata,
@@ -208,7 +208,7 @@ def run_vendor_fetch_summary(vendor_id: str, force: bool = True) -> VendorFetchS
         )
         return summary
 
-    readiness_page_id = GRAZECART_READINESS_PAGE.get(vendor_id, targets[0].page_id)
+    readiness_page_id = configured_readiness_page_id(vendor_id, targets[0].page_id)
     ordered = _order_targets(targets, readiness_page_id)
     verify_target = ordered[0]
 

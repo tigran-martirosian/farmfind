@@ -23,22 +23,15 @@ from .observation import observe_vendor_page
 from .storage import (
     content_hash,
     fetch_output_dir,
+    is_grazecart_vendor,
+    is_uddermilk_vendor,
     latest_fetch_metadata,
     sanitize_reason,
     vendor_account_config,
+    vendor_store_host,
     write_fetch_artifacts,
 )
 from .variant_capture import capture_product_variants
-
-# Vendors fetched by attaching to the user's already-open, manually-logged-in
-# CDP browser (no second profile launch). Membership is data-driven from each
-# vendor's auth_strategy so the login-browser and fetch strategies stay in sync.
-GRAZECART_VENDOR_HOSTS = {
-    "vendor_b": "example-farm-b.test",
-    "vendor_c": "example-farm-c.test",
-    "vendor_d": "example-farm-d.test",
-    "vendor_a": "example-farm-a.test",
-}
 
 _WORKER_STATE = threading.local()
 
@@ -105,7 +98,7 @@ def _uses_cdp_attach(vendor_id: str) -> bool:
     # (external handoff OR credential session profile). Fetch attaches to that
     # already-open, logged-in browser for any known vendor host; it only actually
     # connects when the port is listening (see _port_is_listening below).
-    return vendor_id in GRAZECART_VENDOR_HOSTS
+    return vendor_store_host(vendor_id) is not None
 
 
 def build_metadata(
@@ -511,7 +504,7 @@ def _capture_cdp_page_with_worker(
 def _fetch_grazecart_via_cdp(target: VendorPageTarget, output_dir: Path) -> FetchMetadata | None:
     if not _uses_cdp_attach(target.vendor_id):
         return None
-    expected_host = GRAZECART_VENDOR_HOSTS.get(target.vendor_id)
+    expected_host = vendor_store_host(target.vendor_id)
     if expected_host and _host(target.url) != expected_host:
         return None
 
@@ -708,7 +701,8 @@ def fetch_vendor_page(target: VendorPageTarget, force_refresh: bool = False) -> 
 
                 should_capture_variants = metadata.status == "success" and (
                     (observation is not None and observation.page_kind == "product_detail")
-                    or (observation is not None and observation.page_kind == "category_listing" and target.vendor_id in {"vendor_b", "vendor_c", "vendor_d"})
+                    or (observation is not None and observation.page_kind == "category_listing" and is_grazecart_vendor(target.vendor_id))
+                    or is_uddermilk_vendor(target.vendor_id)
                     or "variations_form" in html.lower()
                     or "product-card" in html.lower()
                     or "select[name^='attribute_']" in html.lower()

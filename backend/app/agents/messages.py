@@ -26,6 +26,7 @@ class ShoppingRequest(BaseModel):
     location: str | None = None
     fulfillment: FulfillmentPreference = "any"
     max_pickup_miles: float | None = Field(default=None, ge=0)
+    max_pickup_minutes: float | None = Field(default=40, ge=0, description="Longest drive to a pickup point.")
     max_vendors: int | None = Field(default=None, ge=1)
 
 
@@ -80,6 +81,8 @@ class VendorDistance(BaseModel):
     vendor_id: str
     farm_miles: float | None = None
     pickup_miles: dict[str, float] = {}
+    farm_minutes: float | None = None
+    pickup_minutes: dict[str, float] = {}
 
 
 class DistanceResult(AgentResult):
@@ -115,6 +118,7 @@ class FulfillmentOption(BaseModel):
     )
     minimum_order: float = 0.0
     distance_miles: float | None = None
+    drive_minutes: float | None = None
     pickup_location_id: str | None = None
     pickup_location_name: str | None = None
     note: str = ""
@@ -153,6 +157,7 @@ class FulfillmentChoice(BaseModel):
     cost: float
     pickup_location_name: str | None = None
     distance_miles: float | None = None
+    drive_minutes: float | None = None
 
 
 class CartResult(AgentResult):

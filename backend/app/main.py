@@ -73,7 +73,7 @@ from .agents.chat import ChatRequest, ChatResponse, ChatService
 from .models import Vendor
 from .services import get_products as service_get_products
 from .services import get_vendors as service_get_vendors
-from .services import optimize_cart
+from .services import UnknownLocation, optimize_cart
 from .schemas import CatalogMode, NormalizedProduct, OptimizeRequest, OptimizeResponse
 from .schemas import ImportedProductCandidate
 from .models import Product
@@ -225,7 +225,10 @@ def post_edit_import_candidate(import_id: str, updates: dict) -> ImportedProduct
 
 @app.post("/optimize", response_model=OptimizeResponse)
 def post_optimize(request: OptimizeRequest) -> OptimizeResponse:
-    return optimize_cart(request)
+    try:
+        return optimize_cart(request)
+    except UnknownLocation as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
 
 
 @app.post("/chat", response_model=ChatResponse)

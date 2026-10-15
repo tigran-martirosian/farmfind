@@ -42,8 +42,10 @@ def test_rule_based_runs_the_fixed_pipeline_and_writes_the_answer():
     assert turn.coordinator == "rule_based"
     assert turn.follow_up_question is None
     assert turn.recommendation.total == 74.54
-    assert turn.reply.startswith("Best order for Exampleville: $74.54 total ($66.50 items + $8.04 fulfillment).")
-    assert "Example Farm G, pickup at Samplebury Farm Gate (6 mi)" in turn.reply
+    assert turn.reply.startswith(
+        "Best order for Exampleville: $74.54 total\n$66.50 items + $8.04 shipping/pickup\n"
+    )
+    assert "\n• Example Farm G: pickup at Samplebury Farm Gate (6 mi)" in turn.reply
     assert "Alternatives:" not in turn.reply
     assert "Cheapest of 4 carts compared." in turn.reply
     assert reply_problems(turn.reply, turn.recommendation) == []
@@ -138,6 +140,7 @@ def test_llm_tools_are_the_four_agents_and_hide_the_delivery_field():
         "location",
         "fulfillment",
         "max_pickup_miles",
+        "max_pickup_minutes",
         "max_vendors",
     }
 

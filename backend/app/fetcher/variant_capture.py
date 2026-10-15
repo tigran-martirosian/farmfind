@@ -492,19 +492,35 @@ def _page_url(page) -> str:
 
 
 def capture_product_variants(page, vendor_id: str, page_id: str, artifact_dir) -> CapturedProductPage:
-    from .grazecart import GRAZECART_VENDORS, build_grazecart_captured_page
+    from .grazecart import build_grazecart_captured_page
+    from .storage import is_grazecart_vendor, is_uddermilk_vendor
+    from .uddermilk import build_uddermilk_captured_page
 
     artifact_path = Path(artifact_dir)
     artifact_path.mkdir(parents=True, exist_ok=True)
 
     # GrazeCart-style vendors use category/listing + detail pages, not the
     # WooCommerce variant flow below. Parse them deterministically from HTML.
-    if vendor_id in GRAZECART_VENDORS:
+    if is_grazecart_vendor(vendor_id):
         try:
             text = page.locator("body").inner_text(timeout=3000)
         except Exception:
             text = ""
         return build_grazecart_captured_page(
+            _page_html(page),
+            vendor_id,
+            page_id,
+            _page_url(page),
+            text=text,
+            artifact_dir=artifact_path,
+        )
+
+    if is_uddermilk_vendor(vendor_id):
+        try:
+            text = page.locator("body").inner_text(timeout=3000)
+        except Exception:
+            text = ""
+        return build_uddermilk_captured_page(
             _page_html(page),
             vendor_id,
             page_id,

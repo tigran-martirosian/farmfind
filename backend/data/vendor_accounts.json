@@ -64,7 +64,8 @@
       "one-time code"
     ],
     "post_login_check_url": "https://example-farm-a.test/my-account/",
-    "min_fetch_interval_hours": 24
+    "min_fetch_interval_hours": 24,
+    "platform": "woocommerce"
   },
   {
     "vendor_id": "vendor_c",
@@ -131,7 +132,9 @@
       "one-time code"
     ],
     "post_login_check_url": "https://example-farm-c.test/account",
-    "min_fetch_interval_hours": 24
+    "min_fetch_interval_hours": 24,
+    "platform": "grazecart",
+    "readiness_page_id": "dairy"
   },
   {
     "vendor_id": "vendor_d",
@@ -198,7 +201,9 @@
       "one-time code"
     ],
     "post_login_check_url": "https://example-farm-d.test/account",
-    "min_fetch_interval_hours": 24
+    "min_fetch_interval_hours": 24,
+    "platform": "grazecart",
+    "readiness_page_id": "dairy_page"
   },
   {
     "vendor_id": "vendor_b",
@@ -260,6 +265,8 @@
       "one-time code"
     ],
     "post_login_check_url": "https://example-farm-b.test/account",
-    "min_fetch_interval_hours": 24
+    "min_fetch_interval_hours": 24,
+    "platform": "grazecart",
+    "readiness_page_id": "milk"
   }
 ]

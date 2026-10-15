@@ -16,6 +16,8 @@ import type {
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 const REQUEST_TIMEOUT_MS = 15000;
+// Searching every mix of farms for a big real cart can take minutes.
+const OPTIMIZE_TIMEOUT_MS = 300000;
 
 async function readErrorText(res: Response): Promise<string> {
   const text = await res.text();
@@ -122,7 +124,7 @@ export async function optimizeCart(
   request: OptimizeRequest
 ): Promise<OptimizeResponse> {
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timeout = window.setTimeout(() => controller.abort(), OPTIMIZE_TIMEOUT_MS);
   try {
     const res = await fetch(`${BASE_URL}/optimize`, {
       method: "POST",
@@ -134,7 +136,7 @@ export async function optimizeCart(
     return res.json();
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
-      throw new Error(`POST /optimize timed out after ${REQUEST_TIMEOUT_MS / 1000}s`);
+      throw new Error(`POST /optimize timed out after ${OPTIMIZE_TIMEOUT_MS / 1000}s`);
     }
     throw error;
   } finally {

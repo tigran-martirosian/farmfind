@@ -16,7 +16,7 @@ from .claude_code_coordinator import create_claude_code_coordinator
 from .coordinator import ConversationState, Coordinator, RuleBasedCoordinator
 from .delivery_agent import DeliveryAgent
 from .distance_agent import DistanceAgent
-from .geo import GazetteerGeocoder, Geocoder, VendorSite, load_vendor_sites
+from .geo import Geocoder, Router, VendorSite, default_geocoder, default_router, load_vendor_sites
 from .llm_coordinator import create_llm_coordinator
 from .messages import CartResult, ShoppingRequest
 
@@ -44,10 +44,12 @@ class ChatResponse(BaseModel):
     coordinator: str
 
 
-def build_bus(catalog: Catalog, geocoder: Geocoder, sites: dict[str, VendorSite]) -> MessageBus:
+def build_bus(
+    catalog: Catalog, geocoder: Geocoder, sites: dict[str, VendorSite], router: Router | None = None
+) -> MessageBus:
     bus = MessageBus()
     bus.register(CatalogAgent(catalog))
-    bus.register(DistanceAgent(geocoder, sites))
+    bus.register(DistanceAgent(geocoder, sites, router))
     bus.register(DeliveryAgent(catalog, sites))
     bus.register(CartAgent(catalog))
     return bus
@@ -56,14 +58,22 @@ def build_bus(catalog: Catalog, geocoder: Geocoder, sites: dict[str, VendorSite]
 class ChatService:
     """Keeps conversations in memory and runs one coordinator turn per message."""
 
-    def __init__(self, coordinator: Coordinator | None = None, geocoder: Geocoder | None = None):
-        self.geocoder = geocoder or GazetteerGeocoder.from_file()
+    def __init__(
+        self,
+        coordinator: Coordinator | None = None,
+        geocoder: Geocoder | None = None,
+        router: Router | None = None,
+    ):
+        self.geocoder = geocoder or default_geocoder()
+        self.router = router if router is not None or geocoder is not None else default_router()
         self._coordinator = coordinator
         self._conversations: dict[str, ConversationState] = {}
 
     def handle(self, request: ChatRequest) -> ChatResponse:
         state = self._conversation(request.conversation_id)
-        bus = build_bus(load_active_catalog(request.catalog_mode), self.geocoder, load_vendor_sites())
+        bus = build_bus(
+            load_active_catalog(request.catalog_mode), self.geocoder, load_vendor_sites(), self.router
+        )
         turn = (self._coordinator or self._default_coordinator()).handle(request.message, state, bus)
         state.history.extend(
             [

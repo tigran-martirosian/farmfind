@@ -107,6 +107,29 @@ def _apply_preference_constraints(plans, request: OptimizeRequest, notes: list[s
     return constrained
 
 
+def _cheapest_per_vendor(options: list[SelectedItem]) -> list[SelectedItem]:
+    """Keep one option per vendor for each mix of delivery flags and wanted
+    packaging/storage, the cheapest. Vendor fees are charged once per vendor, so a
+    pricier option from the same vendor can only win through package-count or weight
+    fees; trying every option made real catalogs (tens of products per item) too slow
+    to search, since the carts grow as options to the power of items."""
+    cheapest: dict[tuple, SelectedItem] = {}
+    for option in options:
+        packages = option.packages
+        key = (
+            option.vendor_id,
+            all(pkg.pickup_dropoff_available for pkg in packages),
+            all(pkg.ups_shipping_available for pkg in packages),
+            all(pkg.farm_truck_delivery_available for pkg in packages),
+            option.packaging_preference == "prefer_glass" and any(pkg.packaging == "glass" for pkg in packages),
+            option.packaging_preference == "avoid_plastic" and any(pkg.packaging != "plastic" for pkg in packages),
+            option.storage_preference == "prefer_fresh" and not any(pkg.storage_state == "frozen" for pkg in packages),
+        )
+        if key not in cheapest or option.item_cost < cheapest[key].item_cost:
+            cheapest[key] = option
+    return list(cheapest.values())
+
+
 def _rank_plans(plans):
     plans.sort(
         key=lambda plan: (
@@ -177,6 +200,7 @@ def optimize(
             packaging_preference,
             storage_preference,
             salt_preference,
+            item.variety,
         )
         if not options:
             constraint_notes.append(
@@ -192,7 +216,7 @@ def optimize(
                 )
             )
         else:
-            option_groups.append(options)
+            option_groups.append(_cheapest_per_vendor(options))
 
     raw_plans = []
     for selected in iterproduct(*option_groups):

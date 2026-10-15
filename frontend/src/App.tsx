@@ -17,6 +17,7 @@ import {
 } from "./api";
 import BestCart from "./components/BestCart";
 import ChatPanel from "./components/ChatPanel";
+import FarmStatus from "./components/FarmStatus";
 import ImportReview from "./components/ImportReview";
 import OptimizeForm from "./components/OptimizeForm";
 import ProductTable from "./components/ProductTable";
@@ -98,6 +99,8 @@ const EMPTY_CONSTRAINTS: OptimizerConstraints = {
   fuel_price_per_gallon: 4,
   use_round_trip_pickup_cost: true,
   max_pickup_distance_miles: null,
+  location: null,
+  max_pickup_minutes: 40,
   use_subscription_pricing: false,
   catalog_mode: "imported_only",
   packaging_preference: "any",
@@ -134,6 +137,7 @@ export default function App() {
   const [fetchJobs, setFetchJobs] = useState<Record<string, FetchJobStatus>>({});
   const [busyImportId, setBusyImportId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [orderTab, setOrderTab] = useState<"items" | "chat">("items");
   const [fetchNotice, setFetchNotice] = useState<string | null>(null);
   const [showExcludedDiagnostics, setShowExcludedDiagnostics] = useState(false);
   const [connectionMetadata, setConnectionMetadata] = useState<Record<string, VendorConnectionMetadata>>({});
@@ -497,8 +501,8 @@ export default function App() {
   return (
     <div className="app">
       <header>
+        <div className="logo" aria-hidden="true" />
         <h1>FarmFind</h1>
-        <p className="subtitle">Dairy &amp; Eggs Procurement Optimizer</p>
       </header>
 
       {error && <div className="error">{error}</div>}
@@ -519,16 +523,89 @@ export default function App() {
         </div>
       )}
 
-      <ChatPanel catalogMode={constraints.catalog_mode} />
-      <OptimizeForm
-        onOptimize={handleOptimize}
-        constraints={constraints}
-        activeFilterLabels={activeFilterLabels}
-        onConstraintsChange={updateConstraints}
-        onRemoveFilter={removeFilter}
-        onResetFilters={resetFilters}
-        loading={loading}
-      />
+      <div className="layout">
+        <div className="layout-main">
+          <div className="tabs" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={orderTab === "items"}
+              className={orderTab === "items" ? "tab tab-active" : "tab"}
+              onClick={() => setOrderTab("items")}
+            >
+              Pick items
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={orderTab === "chat"}
+              className={orderTab === "chat" ? "tab tab-active" : "tab"}
+              onClick={() => setOrderTab("chat")}
+            >
+              Chat assistant
+            </button>
+          </div>
+          <div hidden={orderTab !== "items"}>
+          <OptimizeForm
+            onOptimize={handleOptimize}
+            constraints={constraints}
+            activeFilterLabels={activeFilterLabels}
+            onConstraintsChange={updateConstraints}
+            onRemoveFilter={removeFilter}
+            onResetFilters={resetFilters}
+            loading={loading}
+          />
+          </div>
+          <div hidden={orderTab !== "chat"}>
+            <ChatPanel catalogMode={constraints.catalog_mode} onCart={setResult} />
+          </div>
+          {SHOW_PRODUCT_COMPARISON && (
+            <ProductTable
+              products={products}
+              vendors={vendors}
+              excludedVendorIds={constraints.excluded_vendor_ids}
+              excludedProductIds={constraints.excluded_product_ids}
+              onExcludeVendor={excludeVendor}
+              onIncludeVendor={includeVendor}
+              onExcludeProduct={excludeProduct}
+              onIncludeProduct={includeProduct}
+            />
+          )}
+        </div>
+        <aside className="layout-side">
+          {result ? (
+            <BestCart
+              result={result}
+              excludedVendorIds={constraints.excluded_vendor_ids}
+              onExcludeVendor={excludeVendor}
+              onIncludeVendor={includeVendor}
+              onRequireVendor={(vendorId) =>
+                updateConstraints({
+                  required_vendor_ids: Array.from(
+                    new Set([...constraints.required_vendor_ids, vendorId])
+                  ),
+                })
+              }
+              onExcludeProduct={excludeProduct}
+              onTryVendorMix={(vendorIds) =>
+                updateConstraints({ required_vendor_ids: vendorIds })
+              }
+            />
+          ) : (
+            <section className="card">
+              <h2>Your cart</h2>
+              <p className="helper-text">
+                Enter what you need and where you are. The cheapest mix of farms, with pickup or
+                delivery, shows up here.
+              </p>
+            </section>
+          )}
+          <FarmStatus vendors={vendors} />
+        </aside>
+      </div>
+
+      <details className="card farm-admin">
+        <summary>Farm logins and new products</summary>
       <VendorConnections
         vendors={vendors}
         connections={connections}
@@ -554,45 +631,7 @@ export default function App() {
         showExcluded={showExcludedDiagnostics}
         onToggleExcluded={handleToggleExcluded}
       />
-      {result && (
-        <BestCart
-          result={result}
-          excludedVendorIds={constraints.excluded_vendor_ids}
-          onExcludeVendor={excludeVendor}
-          onIncludeVendor={includeVendor}
-          onRequireVendor={(vendorId) =>
-            updateConstraints({
-              required_vendor_ids: Array.from(
-                new Set([...constraints.required_vendor_ids, vendorId])
-              ),
-            })
-          }
-          onExcludeProduct={excludeProduct}
-          onTryVendorMix={(vendorIds) =>
-            updateConstraints({ required_vendor_ids: vendorIds })
-          }
-        />
-      )}
-      {SHOW_PRODUCT_COMPARISON ? (
-        <ProductTable
-          products={products}
-          vendors={vendors}
-          excludedVendorIds={constraints.excluded_vendor_ids}
-          excludedProductIds={constraints.excluded_product_ids}
-          onExcludeVendor={excludeVendor}
-          onIncludeVendor={includeVendor}
-          onExcludeProduct={excludeProduct}
-          onIncludeProduct={includeProduct}
-        />
-      ) : (
-        <section className="card">
-          <h2>Product Comparison</h2>
-          <p className="helper-text">
-            Product comparison is disabled until candidate data is clean. (Set
-            VITE_SHOW_PRODUCT_COMPARISON=true to re-enable for debugging.)
-          </p>
-        </section>
-      )}
+      </details>
     </div>
   );
 }

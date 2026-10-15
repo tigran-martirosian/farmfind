@@ -1278,10 +1278,10 @@ def test_optimizer_ready_products_filters_and_dedupes_current_import_schema():
         in_stock=False,
     )
     invalid_unit = _imported_vendor_a_product(
-        "cheese_pint",
+        "cheese_gallon",
         CanonicalProduct.cheese,
         1,
-        PackageUnit.pint,
+        PackageUnit.gallon,
     )
 
     excluded = {}
@@ -1651,9 +1651,9 @@ def test_service_unavailable_reason_is_out_of_stock_when_all_matches_oos(monkeyp
     assert result.unavailable_items[0].reason == "all_matches_out_of_stock"
 
 
-def test_service_unavailable_reason_is_no_unit_mapping_for_volume_cheese(monkeypatch):
+def test_service_unavailable_reason_is_no_unit_mapping_for_cheese_by_the_gallon(monkeypatch):
     products = [
-        _p("cheese_pint", CanonicalProduct.cheese, 15.0, 1, PackageUnit.pint),
+        _p("cheese_gallon", CanonicalProduct.cheese, 15.0, 1, PackageUnit.gallon),
     ]
     result = _service_optimize(
         monkeypatch,

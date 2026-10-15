@@ -4,7 +4,7 @@ from __future__ import annotations
 from .combinations import best_combination
 from .fulfillment import allowed_methods, product_method_available
 from .models import CanonicalProduct, Product, Vendor
-from .normalizer import normalize_product
+from .normalizer import cheese_kind, normalize_product
 from .pricing import EPS, build_selected_item
 from .schemas import CartPlan, OptimizeRequest, SelectedItem
 
@@ -23,6 +23,7 @@ def category_options(
     packaging_preference: str,
     storage_preference: str,
     salt_preference: str,
+    variety: str | None = None,
 ) -> list[SelectedItem]:
     """Return each vendor's cheapest package combination for one category."""
     by_vendor: dict[str, list[tuple[Product, float]]] = {}
@@ -40,7 +41,9 @@ def category_options(
             continue
         if packaging_preference == "glass_only" and p.packaging != "glass":
             continue
-        if canonical == CanonicalProduct.butter and (
+        if variety and cheese_kind(p) != variety:
+            continue
+        if canonical in {CanonicalProduct.butter, CanonicalProduct.cheese} and (
             (salt_preference == "salted" and p.is_unsalted) or (salt_preference == "unsalted" and not p.is_unsalted)
         ):
             continue

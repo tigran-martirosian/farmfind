@@ -8,6 +8,8 @@ from ..services import catalog_diagnostics, optimizer_ready_products
 from .bus import MessageBus
 from .catalog_agent import Catalog
 from .delivery_agent import DeliveryAgent
+from .distance_agent import DistanceAgent
+from .geo import Geocoder, Router, load_vendor_sites
 from .messages import CartQuery, CartResult, DeliveryQuery, DeliveryResult, FulfillmentChoice
 
 FULFILLMENT_MODE = {"any": "best", "pickup": "pickup_only", "delivery": "no_pickup"}
@@ -48,6 +50,7 @@ class CartAgent:
             ],
             fulfillment_mode=FULFILLMENT_MODE[query.fulfillment],
             max_pickup_distance_miles=query.max_pickup_miles,
+            max_pickup_minutes=query.max_pickup_minutes,
             max_vendors=query.max_vendors,
             allow_overbuy_percent=OVERBUY_PERCENT,
             catalog_mode=self.catalog.mode,
@@ -78,17 +81,26 @@ def apply_delivery(
         if found is None:
             adjusted_vendors.append(vendor)
             continue
-        miles = {
-            option.pickup_location_id: option.distance_miles
+        measured = {
+            option.pickup_location_id: option
             for option in found.options
             if option.pickup_location_id and option.distance_miles is not None
         }
+        # A vendor with no pickup points listed is picked up at the farm.
+        locations = vendor.pickup_locations or [
+            Vendor.PickupLocation(id="farm_pickup", name="Farm pickup", address=vendor.pickup_address)
+        ]
         update: dict = {
             "pickup_locations": [
                 location.model_copy(
-                    update={"distance_miles": miles.get(location.id, location.distance_miles)}
+                    update={
+                        "distance_miles": measured[location.id].distance_miles,
+                        "drive_minutes": measured[location.id].drive_minutes,
+                    }
                 )
-                for location in vendor.pickup_locations
+                if location.id in measured
+                else location
+                for location in locations
             ]
         }
         truck = next(o for o in found.options if o.method == "farm_truck_delivery")
@@ -106,6 +118,19 @@ def apply_delivery(
     return adjusted_products, adjusted_vendors
 
 
+def locate_catalog(catalog: Catalog, location: str, geocoder: Geocoder, router: Router | None):
+    """The catalog with pickup distances and drive times measured from `location`,
+    and the place name it resolved to (None when the place is not found)."""
+    bus = MessageBus()
+    bus.register(DistanceAgent(geocoder, load_vendor_sites(), router))
+    bus.register(DeliveryAgent(catalog, load_vendor_sites()))
+    delivery = bus.request("optimize", DeliveryAgent.name, DeliveryQuery(location=location))
+    if not delivery.recognised:
+        return catalog.products, catalog.vendors, None
+    products, vendors = apply_delivery(catalog.products, catalog.vendors, delivery)
+    return products, vendors, delivery.location
+
+
 def _fulfillment_choices(cart: OptimizeResponse) -> list[FulfillmentChoice]:
     return [
         FulfillmentChoice(
@@ -115,6 +140,7 @@ def _fulfillment_choices(cart: OptimizeResponse) -> list[FulfillmentChoice]:
             cost=breakdown.fulfillment_cost,
             pickup_location_name=breakdown.pickup_location_name,
             distance_miles=breakdown.pickup_distance_miles,
+            drive_minutes=breakdown.pickup_drive_minutes,
         )
         for breakdown in cart.vendor_breakdowns
     ]

@@ -1,11 +1,12 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { sendChatMessage } from "../api";
-import type { AgentTraceStep, CatalogMode, ChatResponse } from "../types";
-import BestCart from "./BestCart";
+import type { AgentTraceStep, CatalogMode, ChatResponse, OptimizeResponse } from "../types";
 
 interface Props {
   catalogMode: CatalogMode;
+  // The cart an answer recommends is shown in the page's cart column.
+  onCart: (cart: OptimizeResponse) => void;
 }
 
 interface ChatMessage {
@@ -15,7 +16,7 @@ interface ChatMessage {
 }
 
 const EXAMPLE =
-  "I need 2 gallons of milk, 2 lb of butter and 3 dozen eggs, I live in Exampleville. What is my best order?";
+  "I need 2 gallons of milk, 2 lb of butter and a dozen eggs, I live in Princeton, NJ. What is my best order?";
 
 const COORDINATOR_LABELS: Record<string, string> = {
   rule_based: "rule-based coordinator (no model)",
@@ -25,9 +26,7 @@ const COORDINATOR_LABELS: Record<string, string> = {
 function AgentTrace({ steps }: { steps: AgentTraceStep[] }) {
   return (
     <details className="agent-trace">
-      <summary>
-        How this answer was worked out ({steps.length} step{steps.length === 1 ? "" : "s"})
-      </summary>
+      <summary>Breakdown</summary>
       <ol>
         {steps.map((step) => (
           <li key={step.step}>
@@ -45,7 +44,7 @@ function AgentTrace({ steps }: { steps: AgentTraceStep[] }) {
   );
 }
 
-export default function ChatPanel({ catalogMode }: Props) {
+export default function ChatPanel({ catalogMode, onCart }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -63,6 +62,7 @@ export default function ChatPanel({ catalogMode }: Props) {
     try {
       const response = await sendChatMessage(text, conversationId, catalogMode);
       setConversationId(response.conversation_id);
+      if (response.recommendation?.cart) onCart(response.recommendation.cart);
       setMessages((current) => [
         ...current,
         { role: "assistant", text: response.reply, response },
@@ -77,7 +77,7 @@ export default function ChatPanel({ catalogMode }: Props) {
   return (
     <section className="card">
       <div className="card-head-row">
-        <h2>Ask for an order</h2>
+        <h2>Chat assistant</h2>
         {messages.length === 0 && (
           <button type="button" className="inline-link-button" onClick={() => setInput(EXAMPLE)}>
             Use an example
@@ -88,8 +88,8 @@ export default function ChatPanel({ catalogMode }: Props) {
       <div className="chat-messages">
         {messages.length === 0 && (
           <p className="helper-text">
-            Say what you need and which town you are in. The sample towns are Exampleville,
-            Samplebury, Demoton, Mockford and Testerfield.
+            Say what you need and which town or zip code you are in (New Jersey, New York or
+            Pennsylvania).
           </p>
         )}
         {messages.map((message, index) => (
@@ -101,11 +101,6 @@ export default function ChatPanel({ catalogMode }: Props) {
                   Answered by the{" "}
                   {COORDINATOR_LABELS[message.response.coordinator] ?? message.response.coordinator}
                 </span>
-                {message.response.recommendation?.cart && (
-                  <div className="chat-cart">
-                    <BestCart result={message.response.recommendation.cart} />
-                  </div>
-                )}
                 <AgentTrace steps={message.response.trace} />
               </>
             )}
@@ -121,7 +116,7 @@ export default function ChatPanel({ catalogMode }: Props) {
           type="text"
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          placeholder="2 gallons of milk and a dozen eggs, I live in Samplebury"
+          placeholder="2 gallons of milk and a dozen eggs, I live in 08540"
           aria-label="Chat message"
           disabled={busy}
         />

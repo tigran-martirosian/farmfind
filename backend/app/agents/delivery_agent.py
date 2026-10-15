@@ -84,8 +84,14 @@ class DeliveryAgent:
         ]
         options = []
         for location in locations:
-            measured = location.id in distance.pickup_miles
-            miles = distance.pickup_miles.get(location.id, location.distance_miles)
+            if vendor.pickup_locations:
+                measured = location.id in distance.pickup_miles
+                miles = distance.pickup_miles.get(location.id, location.distance_miles)
+                minutes = distance.pickup_minutes.get(location.id)
+            else:
+                measured = distance.farm_miles is not None
+                miles = distance.farm_miles if measured else location.distance_miles
+                minutes = distance.farm_minutes
             fee = (
                 location.pickup_fee
                 + location.pickup_handling_fee
@@ -99,6 +105,7 @@ class DeliveryAgent:
                     base_fee=round(fee, 2),
                     minimum_order=minimum_for(vendor, "pickup_dropoff"),
                     distance_miles=miles,
+                    drive_minutes=minutes,
                     pickup_location_id=location.id,
                     pickup_location_name=location.name,
                     note="Includes the round-trip travel cost."

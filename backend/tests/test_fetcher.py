@@ -383,6 +383,16 @@ def test_real_otp_code_input_triggers_two_factor_required():
     assert detect_fetch_status(target, html, "https://example.test/account") == "action_required"
 
 
+def test_card_security_code_text_in_payment_script_is_not_two_factor():
+    target = _target(required_text_markers=[])
+    html = (
+        "<main><h1>Raw Milk</h1><p>$10.00</p><p>4 in stock</p><button>Add to cart</button></main>"
+        '<script>var i18n = {"invalid_cvc":"The card\'s security code is invalid."};</script>'
+    )
+
+    assert detect_fetch_status(target, html, "https://example.test/product/milk") == "success"
+
+
 def test_store_access_required_when_location_needed_and_no_controls():
     target = _target(required_text_markers=[])
     html = "<main><h2>Please select your location to start your order.</h2></main>"
@@ -1484,7 +1494,10 @@ def test_selector_failure_manual_enter_success_markers_returns_connected(tmp_pat
     monkeypatch.setattr("playwright.sync_api.sync_playwright", lambda: FakeSyncPlaywright(page))
     set_vendor_credentials("vendor_a", "person@example.test", "secret")
 
-    connection = login_vendor_with_saved_credentials("vendor_a")
+    hidden = login_vendor_with_saved_credentials("vendor_a")
+    assert hidden.action_required == "login_required"
+
+    connection = login_vendor_with_saved_credentials("vendor_a", show_browser=True)
 
     assert connection.connection_status == "connected"
     assert connection.action_required is None

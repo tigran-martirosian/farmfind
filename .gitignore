@@ -37,3 +37,6 @@ backend/data/vendor_credentials.json
 *.zip
 .DS_Store
 .idea/
+
+# Real farms: settings, fetched pages and approved products (see backend/app/paths.py)
+backend/farms/

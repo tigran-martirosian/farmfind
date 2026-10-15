@@ -244,8 +244,26 @@ def _replace_unavailable_reasons(
     return response.model_copy(update={"unavailable_items": unavailable})
 
 
+class UnknownLocation(ValueError):
+    pass
+
+
 def optimize_cart(request: OptimizeRequest) -> OptimizeResponse:
     products, vendors = load_catalog(request.catalog_mode)
+    place = None
+    if request.location:
+        from .agents.cart_agent import locate_catalog
+        from .agents.catalog_agent import Catalog
+        from .agents.geo import default_geocoder, default_router
+
+        products, vendors, place = locate_catalog(
+            Catalog(request.catalog_mode, products, vendors),
+            request.location,
+            default_geocoder(),
+            default_router(),
+        )
+        if place is None:
+            raise UnknownLocation(f"Could not find {request.location!r}. Try a US town and state, or a zip code.")
     excluded_by_reason: dict[str, int] = {}
     ready = optimizer_ready_products(products, excluded_by_reason)
     diagnostics = catalog_diagnostics(products, ready, excluded_by_reason)
@@ -256,7 +274,7 @@ def optimize_cart(request: OptimizeRequest) -> OptimizeResponse:
         ready,
         vendors,
     )
-    return response.model_copy(update={"catalog_diagnostics": diagnostics})
+    return response.model_copy(update={"catalog_diagnostics": diagnostics, "location": place})
 
 
 

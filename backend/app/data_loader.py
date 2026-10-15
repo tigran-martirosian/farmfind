@@ -7,8 +7,9 @@ from pathlib import Path
 from typing import Literal
 
 from .models import Product, Vendor
+from .paths import FARMS_DIR, SAMPLE_DATA_DIR
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+DATA_DIR = SAMPLE_DATA_DIR
 
 CatalogMode = Literal["imported_only", "demo_only", "imported_plus_demo"]
 
@@ -37,7 +38,7 @@ def load_demo_products() -> list[Product]:
 @lru_cache(maxsize=1)
 def load_imported_vendors() -> list[Vendor]:
     """Real vendor fulfillment metadata for approved imported products."""
-    path = DATA_DIR / IMPORTED_VENDORS_FILE
+    path = FARMS_DIR / IMPORTED_VENDORS_FILE
     if not path.exists():
         return []
     return [Vendor(**row) for row in json.loads(path.read_text(encoding="utf-8"))]
@@ -76,9 +77,19 @@ def _default_imported_vendor(vendor_id: str) -> Vendor:
 
 def _imported_vendors_for(product_vendor_ids: set[str]) -> list[Vendor]:
     """Every approved-product vendor gets a Vendor record (synthesized if the
-    imported_vendors.json catalog does not have one yet)."""
+    imported_vendors.json catalog does not have one yet). last_fetched_at is the
+    farm's last good pull (python -m app.fetcher.pull)."""
+    from .fetcher.pull import load_pulls
+
     by_id = {vendor.id: vendor for vendor in load_imported_vendors()}
-    return [by_id.get(vendor_id) or _default_imported_vendor(vendor_id) for vendor_id in sorted(product_vendor_ids)]
+    pulls = load_pulls()
+    vendors = [by_id.get(vendor_id) or _default_imported_vendor(vendor_id) for vendor_id in sorted(product_vendor_ids)]
+    return [
+        vendor.model_copy(update={"last_fetched_at": pulls[vendor.id]["last_good_pull_at"]})
+        if pulls.get(vendor.id, {}).get("last_good_pull_at")
+        else vendor
+        for vendor in vendors
+    ]
 
 
 def load_approved_imported_products() -> list[Product]:

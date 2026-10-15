@@ -14,8 +14,7 @@ from pathlib import Path
 
 from .account_connections import classify_connection_result, connection_config_or_default, update_connection_status
 from .models import ExternalBrowserSessionResult, VendorConnectionConfig, VendorPageTarget
-from .services import GRAZECART_READINESS_PAGE
-from .storage import external_browser_profile_path, load_vendor_account_configs, load_vendor_pages, safe_path_part
+from .storage import external_browser_profile_path, load_vendor_account_configs, load_vendor_pages, readiness_page_id as configured_readiness_page_id, safe_path_part
 
 EXTERNAL_HANDOFF_PORT = 9223
 
@@ -42,7 +41,7 @@ def resolve_vendor_handoff(vendor_id: str) -> tuple[VendorConnectionConfig, Vend
     targets = [target for target in load_vendor_pages() if target.vendor_id == vendor_id]
     if not targets:
         raise ValueError(f"No vendor_pages.json entries are configured for {vendor_id}.")
-    readiness_page_id = GRAZECART_READINESS_PAGE.get(vendor_id, targets[0].page_id)
+    readiness_page_id = configured_readiness_page_id(vendor_id, targets[0].page_id)
     target = next((item for item in targets if item.page_id == readiness_page_id), targets[0])
     return config, target
 

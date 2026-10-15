@@ -30,6 +30,14 @@ export interface Vendor {
   pickup_dropoff_available: boolean | null;
   ups_shipping_available: boolean | null;
   farm_truck_delivery_available: boolean;
+  farm_truck_delivery_fee: number;
+  ups_shipping_fee: number;
+  ups_packing_fee: number;
+  ups_cooler_fee: number;
+  ups_rate_per_lb: number;
+  free_shipping_threshold: number | null;
+  pickup_rate_per_lb: number;
+  free_pickup_threshold: number | null;
   source_type: "manual" | "imported" | "mock";
   website_url: string | null;
   login_required: boolean;
@@ -369,6 +377,9 @@ export interface OptimizeRequest {
   fuel_price_per_gallon: number | null;
   use_round_trip_pickup_cost: boolean;
   max_pickup_distance_miles: number | null;
+  /** Town or zip code; pickup is then measured as a drive. */
+  location: string | null;
+  max_pickup_minutes: number | null;
   use_subscription_pricing: boolean;
   packaging_preference: string;
   include_returnable_deposits_in_total: boolean;
@@ -400,6 +411,8 @@ export type OptimizerConstraints = Pick<
   | "storage_preference"
   | "salt_preference"
   | "catalog_mode"
+  | "location"
+  | "max_pickup_minutes"
 >;
 
 export interface CartLine {
@@ -516,9 +529,12 @@ export interface VendorBreakdown {
   pickup_fee: number;
   pickup_handling_fee: number;
   pickup_vendor_fees: number;
+  pickup_weight_fee: number;
   ups_shipping_fee: number;
   ups_packing_fee: number;
   ups_cooler_fee: number;
+  ups_weight_fee: number;
+  estimated_weight_lb: number | null;
   per_package_fee: number;
   per_cold_item_fee: number;
   farm_truck_delivery_fee: number;

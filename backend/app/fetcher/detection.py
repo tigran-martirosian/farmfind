@@ -134,13 +134,21 @@ class FetchDetection:
 
 
 def detected_markers(html: str, markers: list[str]) -> list[str]:
+    # Whole-word match: a short marker like "2fa" must not hit inside a hash or id.
     lower_html = html.lower()
-    return [marker for marker in markers if marker.lower() in lower_html]
+    return [
+        marker
+        for marker in markers
+        if re.search(rf"(?<![a-z0-9]){re.escape(marker.lower())}(?![a-z0-9])", lower_html)
+    ]
 
 
 def two_factor_challenge_markers(html: str) -> list[str]:
     lower_html = html.lower()
-    explicit = detected_markers(html, TWO_FACTOR_MARKERS)
+    # Payment scripts carry card error text ("the card's security code is
+    # invalid") on every shop page; only words a visitor can see count.
+    page_text = re.sub(r"<(script|style)\b.*?</\1\s*>", " ", html, flags=re.IGNORECASE | re.DOTALL)
+    explicit = detected_markers(page_text, TWO_FACTOR_MARKERS)
     code_input = bool(
         re.search(
             r"<input\b[^>]*(?:name|id|autocomplete|placeholder)\s*=\s*['\"][^'\"]*"
@@ -250,6 +258,16 @@ def pricing_lock_markers(html: str) -> list[str]:
     return detected_markers(html, PRICING_LOCK_MARKERS)
 
 
+def _pricing_lock_count(html: str) -> int:
+    lower_html = html.lower()
+    return sum(lower_html.count(marker) for marker in PRICING_LOCK_MARKERS)
+
+
+def looks_signed_out(html: str) -> bool:
+    """Content shows a signed-out visitor: a sign-in link, or prices locked on several products."""
+    return shows_signed_out_header(html) or _pricing_lock_count(html) >= 3
+
+
 def store_access_markers(html: str) -> list[str]:
     return detected_markers(html, STORE_ACCESS_MARKERS)
 
@@ -326,6 +344,16 @@ def _strong_captcha_markers(html: str) -> list[str]:
     return sorted(set(strong))
 
 
+_LINK_TEXT = r"<a\b[^>]*>(?:\s|<[^>]+>|&nbsp;)*({words})(?:\s|<[^>]+>|&nbsp;)*</a>"
+_SIGN_IN_LINK = re.compile(_LINK_TEXT.format(words=r"sign in|log in|login"), re.IGNORECASE)
+_SIGN_OUT_LINK = re.compile(_LINK_TEXT.format(words=r"sign out|log out|logout|my account"), re.IGNORECASE)
+
+
+def shows_signed_out_header(html: str) -> bool:
+    """The page offers a "Sign in" link and no "Sign out" or "My account" link."""
+    return bool(_SIGN_IN_LINK.search(html)) and not _SIGN_OUT_LINK.search(html)
+
+
 def classify_fetch_status(
     target: VendorPageTarget,
     html: str,
@@ -363,6 +391,29 @@ def classify_fetch_status(
         return FetchDetection(
             status="captcha_required",
             classification_reason="Strong captcha/blocking wall markers found.",
+            detected_product_markers=product_markers,
+            detected_login_markers=login_markers,
+            detected_captcha_markers=captcha_markers,
+            detected_two_factor_markers=two_factor_markers,
+        )
+    # A page that needs a login but greets a signed-out visitor shows public or
+    # teaser prices at best, never the member prices this fetch is for.
+    if target.requires_login and shows_signed_out_header(html):
+        return FetchDetection(
+            status="login_required",
+            classification_reason="Page shows a sign-in link and no sign-out link.",
+            detected_product_markers=product_markers,
+            detected_login_markers=login_markers,
+            detected_captcha_markers=captcha_markers,
+            detected_two_factor_markers=two_factor_markers,
+        )
+    # Some shops keep a hidden "Sign out" link in every page; "Sign up for
+    # pricing" repeated on the products is the surer sign of a signed-out
+    # visitor (once, in a footer, it is only an ad).
+    if target.requires_login and not is_login_url and _pricing_lock_count(html) >= 3:
+        return FetchDetection(
+            status="pricing_locked",
+            classification_reason="Login-only page shows pricing-lock markers.",
             detected_product_markers=product_markers,
             detected_login_markers=login_markers,
             detected_captcha_markers=captcha_markers,

@@ -6,7 +6,6 @@ import json
 import pytest
 
 from app.fetcher.grazecart import (
-    GRAZECART_VENDORS,
     build_grazecart_captured_page,
     infer_product_type,
     infer_size,
@@ -602,8 +601,18 @@ def test_grazecart_price_values_do_not_multiply_bundle_quantity(tmp_path):
     assert vendor_d_capture.variants[0].inferred_package_size != 51.28
 
 
-def test_grazecart_vendor_set():
-    assert GRAZECART_VENDORS == {"vendor_b", "vendor_c", "vendor_d"}
+def test_grazecart_vendor_set_comes_from_farm_config():
+    from app.fetcher.storage import is_grazecart_vendor, readiness_page_id, vendor_store_host
+
+    assert {v for v in ["vendor_a", "vendor_b", "vendor_c", "vendor_d"] if is_grazecart_vendor(v)} == {
+        "vendor_b",
+        "vendor_c",
+        "vendor_d",
+    }
+    assert vendor_store_host("vendor_b") == "example-farm-b.test"
+    assert vendor_store_host("unknown_farm") is None
+    assert readiness_page_id("vendor_c", "fallback") == "dairy"
+    assert readiness_page_id("vendor_a", "fallback") == "fallback"
 
 
 def test_select_dropdown_bundle_options_are_parsed():
@@ -762,3 +771,67 @@ def test_no_quantity_evidence_only_after_all_recovery_checkpoints(tmp_path, monk
     assert "quantity_evidence_not_found_after_full_inspection" in candidate.missing_fields
     assert not any("recovery_checked=" in note for note in candidate.review_notes)
     assert variant.recovery_trace.checked_sources
+
+
+def test_markers_match_whole_words_only():
+    from app.fetcher.detection import detected_markers
+
+    assert detected_markers('<link href="/build/app.c2fa91.css">', ["2fa"]) == []
+    assert detected_markers("<p>Enter your 2FA code</p>", ["2fa"]) == ["2fa"]
+    assert detected_markers('<a class="customer-logout">Log out</a>', ["logout", "log out"]) == ["logout", "log out"]
+
+
+def test_login_page_with_sign_in_link_is_not_a_success():
+    from app.fetcher.detection import classify_fetch_status, shows_signed_out_header
+    from app.fetcher.models import VendorPageTarget
+
+    signed_out = (
+        '<a href="/login"><i class="icon"></i> Sign In</a>'
+        '<h1>Raw Dairy</h1><div class="product-card"><span class="price">$9.00</span>'
+        '<button>Add to cart</button></div>'
+    )
+    signed_in = signed_out.replace("Sign In", "Sign Out")
+    assert shows_signed_out_header(signed_out)
+    assert not shows_signed_out_header(signed_in)
+    target = VendorPageTarget(vendor_id="vendor_b", page_id="milk", url="https://x/milk", requires_login=True)
+    assert classify_fetch_status(target, signed_out, "https://x/milk").status == "login_required"
+    public = target.model_copy(update={"requires_login": False})
+    assert classify_fetch_status(public, signed_out, "https://x/milk").status != "login_required"
+
+
+def test_connection_check_trusts_sign_in_link_over_loose_words():
+    from app.fetcher.account_connections import classify_connection_result
+    from app.fetcher.models import VendorConnectionConfig, VendorPageTarget
+
+    config = VendorConnectionConfig(
+        vendor_id="vendor_b",
+        auth_state_label="vendor_b",
+        login_url="https://x.test/login",
+        login_success_markers=["account"],
+        login_failure_markers=["lost your password"],
+    )
+    target = VendorPageTarget(vendor_id="vendor_b", page_id="milk", url="https://x.test/milk", requires_login=True)
+    shop = '<a href="/login">Sign In</a> <a href="/register">Create Account</a> Lost your password?'
+    assert classify_connection_result(target, shop, "https://x.test/milk", config) == ("action_required", "login_required")
+    assert classify_connection_result(target, shop, "https://x.test/login/", config) == ("failed", "credential_update_required")
+
+
+def test_price_lock_on_many_products_means_signed_out():
+    from app.fetcher.detection import classify_fetch_status
+    from app.fetcher.models import VendorPageTarget
+
+    card = '<div class="product-card"><h3>Milk</h3><span>$9.00</span><a href="/register">Sign up for pricing</a><button>Add to cart</button></div>'
+    html = '<a href="/logout" style="display:none">Sign Out</a>' + card * 3
+    target = VendorPageTarget(vendor_id="vendor_b", page_id="milk", url="https://x/milk", requires_login=True)
+    assert classify_fetch_status(target, html, "https://x/milk").status == "pricing_locked"
+
+
+def test_login_by_hand_notices_sign_in():
+    from app.fetcher.login_by_hand import page_shows_signed_in
+
+    login = "https://x.test/login"
+    hidden_logout = '<a href="/logout" style="display:none">Sign Out</a>'
+    assert not page_shows_signed_in("Sign In  Create Account  Sign up for pricing", hidden_logout, "https://x.test/store", login)
+    assert not page_shows_signed_in("Email Password", hidden_logout, "https://x.test/login", login)
+    assert page_shows_signed_in("Hi Tigran  Raw Dairy $9.00", hidden_logout, "https://x.test/store", login)
+    assert not page_shows_signed_in("Raw Dairy", "<p>no account links</p>", "https://x.test/store", login)

@@ -2,11 +2,11 @@
 
 I made FarmFind for my own use, because comparing farm web shops by hand takes a long time. Every shop has its own package sizes, shipping fees and order minimums, so the cheapest product usually isn't the cheapest order. FarmFind reads the products from the shops, converts them to the same units and finds the cheapest cart for a shopping list. You can also type the order into a chat.
 
-Everything in this repository is sample data. The vendors, towns and prices are fictional.
+It reads five real farm shops that sell around New Jersey, New York and Pennsylvania. My logins and the prices it pulls stay on my computer; the repository also has sample farms and towns, so it runs without them.
 
-<img src="docs/demo.gif" width="640" alt="A short recording: an order is typed into the chat and the cheapest cart appears">
+<img src="docs/demo.gif" width="640" alt="A short recording: an order for Princeton, NJ is typed into the chat and the cheapest cart appears on the right, then the same from the item list">
 
-<img src="docs/dashboard.png" width="640" alt="The chat panel after the answer: a short reply from the Claude coordinator, the recommended cart with alternatives and one total, and the agent steps folded away">
+<img src="docs/dashboard.png" width="640" alt="The page after an order: the item list and town on the left, the cheapest cart with one total per farm on the right">
 
 ## Finding the cheapest cart
 
@@ -22,7 +22,7 @@ The fetcher's tests run offline. In this repository it isn't run against live sh
 
 ## The chat
 
-You can type an order as a sentence, for example "I need 2 gallons of milk, 2 lb of butter and 3 dozen eggs, I live in Exampleville". Four small agents (catalog, distance, delivery, cart) do the work, and a coordinator decides which ones to call. The default coordinator is plain rules and needs no key. The other one lets a Claude model choose the agents and word the answer.
+You can type an order as a sentence, for example "I need 2 gallons of milk, 2 lb of butter and a dozen eggs, I live in Princeton, NJ". Four small agents (catalog, distance, delivery, cart) do the work, and a coordinator decides which ones to call. The default coordinator is plain rules and needs no key. The other one lets a Claude model choose the agents and word the answer.
 
 Prices never come from the model. Every dollar amount in a model-written reply has to appear in the cart result, or the reply is rejected. If the model call fails, the rule-based coordinator answers instead. If you read one function in this repository, read `reply_problems` in `backend/app/agents/replies.py`, which is that check.
 

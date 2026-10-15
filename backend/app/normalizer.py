@@ -47,9 +47,13 @@ CONVERSIONS: dict[CanonicalProduct, dict[PackageUnit, float]] = {
         PackageUnit.lb: 1.0,
         PackageUnit.oz: 1.0 / 16.0,
     },
+    # Soft cheese (cottage, fresh farm cheese) is sold by the pint; a pint is
+    # counted as about a pound.
     CanonicalProduct.cheese: {
         PackageUnit.lb: 1.0,
         PackageUnit.oz: 1.0 / 16.0,
+        PackageUnit.pint: 1.0,
+        PackageUnit.quart: 2.0,
     },
     CanonicalProduct.eggs: {
         PackageUnit.count: 1.0,
@@ -57,6 +61,38 @@ CONVERSIONS: dict[CanonicalProduct, dict[PackageUnit, float]] = {
         PackageUnit.half_dozen: 6.0,
     },
 }
+
+# Cheese kinds a shopper can pick, matched in the listing name in this order.
+CHEESE_KINDS: list[tuple[str, str]] = [
+    ("cottage", "Cottage"),
+    ("cream cheese", "Cream cheese"),
+    ("cheddar", "Cheddar"),
+    ("swiss", "Swiss"),
+    ("gouda", "Gouda"),
+    ("colby", "Colby"),
+    ("jack", "Monterey Jack"),
+    ("parmesan", "Parmesan"),
+    ("havarti", "Havarti"),
+    ("feta", "Feta"),
+    ("mozzarella", "Mozzarella"),
+    ("ricotta", "Ricotta"),
+    ("farmer", "Farmer cheese"),
+    ("quark", "Quark"),
+    ("kefir", "Kefir cheese"),
+    ("gruyere", "Gruyere"),
+    ("brie", "Brie"),
+    ("blue", "Blue"),
+]
+OTHER_CHEESE = "Other cheese"
+
+
+def cheese_kind(product: Product) -> str | None:
+    """The kind of a cheese listing ("Cheddar"), None for anything that is not cheese."""
+    if product.canonical_product != CanonicalProduct.cheese:
+        return None
+    name = product.product_name.casefold()
+    return next((kind for word, kind in CHEESE_KINDS if word in name), OTHER_CHEESE)
+
 
 class NormalizationError(ValueError):
     """Raised when a listing cannot be normalized."""
@@ -112,6 +148,7 @@ def normalize_product(product: Product) -> NormalizedProduct:
         unit_price=unit_price,
         excluded=reason is not None,
         exclusion_reason=reason,
+        variety=cheese_kind(product),
         display_name=build_display_name(
             product.product_name,
             quantity=product.package_quantity,

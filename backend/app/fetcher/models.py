@@ -28,6 +28,7 @@ CaptureMethod = Literal[
 ]
 SessionMode = Literal["storage_state", "persistent_profile"]
 AuthStrategy = Literal["credential_browser_login", "external_browser_handoff"]
+StorePlatform = Literal["woocommerce", "grazecart", "uddermilk"]
 CredentialStatus = Literal["configured", "not_configured", "needs_update"]
 ConnectionStatus = Literal[
     "not_connected",
@@ -67,6 +68,8 @@ class VendorPageTarget(BaseModel):
     login_url_patterns: list[str] = []
     login_text_markers: list[str] = ["sign in", "log in", "login"]
     required_text_markers: list[str] = []
+    # False for a store front that only shows whether the sign-in holds; the pull skips it.
+    has_products: bool = True
 
 
 class FetchMetadata(BaseModel):
@@ -151,6 +154,10 @@ class VendorConnectionConfig(BaseModel):
     session_mode: SessionMode = "persistent_profile"
     auth_strategy: AuthStrategy = "credential_browser_login"
     captcha_sensitive: bool = False
+    # Which store software the farm runs; picks the page parser.
+    platform: StorePlatform = "woocommerce"
+    # The page that proves a login reached member prices (defaults to the first page).
+    readiness_page_id: str | None = None
     browser_channel: str = "chrome"
     username_selector: str | None = None
     password_selector: str | None = None

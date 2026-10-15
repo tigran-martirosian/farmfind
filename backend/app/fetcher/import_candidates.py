@@ -106,7 +106,10 @@ def latest_variant_snapshot(vendor_id: str, page_id: str) -> Path | None:
 
 def create_import_candidates_from_variant_snapshot(
     variant_snapshots_path: str | Path,
+    seen_variant_ids: set[str] | None = None,
 ) -> Path:
+    """seen_variant_ids: shop package ids already taken from another page in the same pull;
+    a package listed on two category pages becomes one candidate."""
     from app.services import validate_import_candidate
 
     path = Path(variant_snapshots_path)
@@ -118,6 +121,10 @@ def create_import_candidates_from_variant_snapshot(
     output_dir.mkdir(parents=True, exist_ok=True)
     candidates: list[ImportedProductCandidate] = []
     for index, variant in enumerate(captured.variants, start=1):
+        if seen_variant_ids is not None and variant.variant_id:
+            if variant.variant_id in seen_variant_ids:
+                continue
+            seen_variant_ids.add(variant.variant_id)
         if variant.offer_evidence is None:
             variant = variant.model_copy(update={"offer_evidence": build_offer_evidence(captured, variant)})
         validation = validate_offer(variant)
@@ -738,7 +745,9 @@ def _identity_text(value: str | None) -> str:
     return re.sub(r"\s+", " ", (value or "").lower().replace("-", " ")).strip()
 
 
-def _approved_product_key(product: Product) -> tuple:
+def known_product_key(product: Product) -> tuple:
+    """The same product from the same farm, whatever its price or stock today. A bundle
+    can share this key with its single piece; the pull tells them apart (pull.apply_pull)."""
     return (
         product.vendor_id,
         _identity_text(clean_base_name(product.product_name)),
@@ -747,8 +756,11 @@ def _approved_product_key(product: Product) -> tuple:
         _value(product.package_unit),
         product.packaging,
         product.storage_state,
-        round(product.price, 2),
     )
+
+
+def _approved_product_key(product: Product) -> tuple:
+    return known_product_key(product) + (round(product.price, 2),)
 
 
 def _candidate_approved_key(candidate: ImportedProductCandidate) -> tuple:

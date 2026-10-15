@@ -19,6 +19,11 @@ interface Props {
   onTryVendorMix?: (vendorIds: string[]) => void;
 }
 
+// The cart shows the plain grocery name: "Raw Cow Milk" reads as "Cow Milk".
+function shownName(name: string): string {
+  return name.replace(/\braw\s+/gi, "");
+}
+
 interface VendorGroup {
   vendorId: string;
   vendorName: string;
@@ -187,27 +192,27 @@ function VendorBreakdown({
                 {onIncludeVendor && excludedVendorIds.includes(group.vendorId) ? (
                   <button
                     type="button"
-                    className="secondary-button"
+                    className="inline-link-button"
                     onClick={() => onIncludeVendor(group.vendorId)}
                   >
-                    Re-include farm
+                    Use again
                   </button>
                 ) : onExcludeVendor ? (
                   <button
                     type="button"
-                    className="secondary-button"
+                    className="inline-link-button"
                     onClick={() => onExcludeVendor(group.vendorId)}
                   >
-                    Exclude this farm
+                    Skip this farm
                   </button>
                 ) : null}
                 {onRequireVendor && (
                   <button
                     type="button"
-                    className="secondary-button"
+                    className="inline-link-button"
                     onClick={() => onRequireVendor(group.vendorId)}
                   >
-                    Force this farm
+                    Always use
                   </button>
                 )}
               </div>
@@ -220,9 +225,9 @@ function VendorBreakdown({
                 <div className="vendor-item-title">
                   <strong>{labelProduct(item.canonical_product)}</strong>
                   <span>
-                    Requested {item.requested_quantity} {item.normalized_unit},
-                    bought {item.purchased_quantity} {item.normalized_unit},
-                    overbuy {item.overbuy_percent}%
+                    {item.purchased_quantity} {item.normalized_unit}
+                    {item.overbuy_percent > 0 &&
+                      ` (asked for ${item.requested_quantity}, ${item.overbuy_percent}% extra)`}
                   </span>
                 </div>
                 {item.packages.map((pkg) => (
@@ -231,7 +236,7 @@ function VendorBreakdown({
                     className="package-row"
                   >
                     <div>
-                      <div>{pkg.product_name}</div>
+                      <div>{shownName(pkg.product_name)}</div>
                       <small>
                         {pkg.package_count} package
                         {pkg.package_count === 1 ? "" : "s"} x{" "}
@@ -239,7 +244,7 @@ function VendorBreakdown({
                       </small>
                     </div>
                     <div>
-                      <div>{formatMoney(pkg.regular_price_each)} regular</div>
+                      <div>{formatMoney(pkg.regular_price_each)} each</div>
                       {pkg.subscription_applied && (
                         <small>{formatMoney(pkg.effective_price_each)} subscription</small>
                       )}
@@ -257,7 +262,7 @@ function VendorBreakdown({
                         className="inline-link-button"
                         onClick={() => onExcludeProduct(pkg.product_id)}
                       >
-                        Exclude this product
+                        Skip
                       </button>
                     )}
                   </div>
@@ -276,82 +281,63 @@ function VendorBreakdown({
           {group.breakdown && (
             <div className="fulfillment-detail">
               {group.breakdown.fulfillment_method === "pickup_dropoff" && (
-                <>
-                  <div>Pickup/drop-off: {group.breakdown.pickup_location_name}</div>
-                  <div>
-                    Distance: {group.breakdown.pickup_distance_miles ?? 0} mi one-way
-                  </div>
-                  <div>
-                    Travel cost: {formatMoney(group.breakdown.pickup_travel_cost)}
-                  </div>
-                  <div>
-                    Pickup/vendor fees:{" "}
-                    {formatMoney(
-                      group.breakdown.pickup_fee +
-                        group.breakdown.pickup_handling_fee +
-                        group.breakdown.pickup_vendor_fees
-                    )}
-                  </div>
-                </>
+                <div>
+                  Pick up at {group.breakdown.pickup_location_name}
+                  {group.breakdown.pickup_distance_miles != null &&
+                    `, ${group.breakdown.pickup_distance_miles} mi away`}
+                  : drive {formatMoney(group.breakdown.pickup_travel_cost)}, farm fee{" "}
+                  {formatMoney(
+                    group.breakdown.pickup_fee +
+                      group.breakdown.pickup_handling_fee +
+                      group.breakdown.pickup_vendor_fees +
+                      group.breakdown.pickup_weight_fee
+                  )}
+                </div>
               )}
               {group.breakdown.fulfillment_method === "ups_shipping" && (
                 <div>
-                  UPS shipping selected: shipping {formatMoney(group.breakdown.ups_shipping_fee)},
-                  packing/cooler{" "}
-                  {formatMoney(
-                    group.breakdown.ups_packing_fee + group.breakdown.ups_cooler_fee
-                  )}{" "}
-                  <span className="helper-text">(estimated/default, not a captured checkout quote)</span>
+                  UPS shipping{" "}
+                  {formatMoney(group.breakdown.ups_shipping_fee + group.breakdown.ups_weight_fee)}
+                  {group.breakdown.estimated_weight_lb != null &&
+                    ` (about ${group.breakdown.estimated_weight_lb} lb)`}
+                  {group.breakdown.ups_packing_fee + group.breakdown.ups_cooler_fee > 0 &&
+                    ` + cooler ${formatMoney(
+                      group.breakdown.ups_packing_fee + group.breakdown.ups_cooler_fee
+                    )}`}
+                  , estimated from the farm's posted rates
                 </div>
               )}
               {group.breakdown.fulfillment_method === "farm_truck_delivery" && (
-                <div>
-                  Farm truck delivery:{" "}
-                  {formatMoney(group.breakdown.farm_truck_delivery_fee)}
+                <div>Farm delivery {formatMoney(group.breakdown.farm_truck_delivery_fee)}</div>
+              )}
+              {!group.breakdown.minimum_met && (
+                <div className="warning-text">
+                  {formatMoney(group.breakdown.amount_short)} short of the{" "}
+                  {formatMoney(group.breakdown.minimum_order)} minimum
                 </div>
               )}
-              <div>
-                Minimum: {formatMoney(group.breakdown.minimum_order)}{" "}
-                {group.breakdown.minimum_met
-                  ? "(met)"
-                  : `(short ${formatMoney(group.breakdown.amount_short)})`}
-              </div>
-              {group.breakdown.warnings.map((warning) => (
-                <div key={warning} className="warning-text">
-                  {warning}
-                </div>
-              ))}
+              {group.breakdown.warnings
+                .filter((warning) => !warning.includes("not a captured checkout quote"))
+                .map((warning) => (
+                  <div key={warning}>{warning}</div>
+                ))}
             </div>
           )}
 
-          {groups.length > 1 && (
           <div className="vendor-totals">
-            <div>
-              <span>Vendor item subtotal</span>
-              <strong>{formatMoney(group.itemSubtotal)}</strong>
-            </div>
-            <div>
-              <span>Fulfillment cost</span>
-              <strong>{formatMoney(group.fulfillmentCost)}</strong>
-            </div>
             {group.breakdown?.returnable_deposits ? (
               <div>
-                <span>Returnable deposits</span>
-                <strong>{formatMoney(group.breakdown.returnable_deposits)}</strong>
+                <span>Jar deposits (refunded)</span>
+                <span>{formatMoney(group.breakdown.returnable_deposits)}</span>
               </div>
             ) : null}
-            <div>
-              <span>Due today incl. deposits</span>
-              <strong>
-                {formatMoney(getVendorTotal(group) + (group.breakdown?.returnable_deposits ?? 0))}
-              </strong>
-            </div>
             <div className="vendor-total">
-              <span>Estimated vendor cost</span>
+              <span>
+                {formatMoney(group.itemSubtotal)} items + {formatMoney(group.fulfillmentCost)} shipping/pickup
+              </span>
               <strong>{formatMoney(getVendorTotal(group))}</strong>
             </div>
           </div>
-          )}
         </div>
       ))}
     </div>
@@ -394,7 +380,21 @@ export default function BestCart({
 
   return (
     <div className="card">
-      <h2>Best Cart</h2>
+      <div className="cart-summary">
+        <div>
+          <h2>Your cart</h2>
+          <span className="helper-text">
+            {result.vendor_breakdowns.length} farm{result.vendor_breakdowns.length === 1 ? "" : "s"}
+            {" · "}items {formatMoney(result.product_subtotal)} · shipping/pickup{" "}
+            {formatMoney(result.fulfillment_cost_total)}
+            {result.returnable_deposits > 0 &&
+              ` · jar deposits ${formatMoney(result.returnable_deposits)}`}
+            {result.subscription_savings > 0 &&
+              ` · subscription saves ${formatMoney(result.subscription_savings)}`}
+          </span>
+        </div>
+        <div className="grand-total">{formatMoney(result.total_due_today)}</div>
+      </div>
 
       <VendorBreakdown
         plan={responseAsPlan(result)}
@@ -428,7 +428,7 @@ export default function BestCart({
 
       {result.alternative_carts.length > 0 && (
         <div className="section">
-          <h3>Alternative Carts</h3>
+          <h3>Other mixes it compared</h3>
           <div className="alternative-list">
             {result.alternative_carts.map((cart: CartPlan) => {
               const expanded = expandedRank === cart.rank;
@@ -441,16 +441,15 @@ export default function BestCart({
                     aria-expanded={expanded}
                   >
                     <span>
-                      <strong>Alternative Cart #{cart.rank}</strong> -{" "}
+                      <strong>Option {cart.rank}</strong> -{" "}
                       {formatMoney(cart.total_estimated_cost)}
                     </span>
-                    <span>{expanded ? "Hide preview" : "Preview alternative cart"}</span>
+                    <span>{expanded ? "Hide" : "Show"}</span>
                   </button>
                   <div className="alternative-summary">
                     <span>Shops: {cart.vendor_breakdowns.map((vendor) => vendor.vendor_name).join(", ")}</span>
                     <span>Items: {formatMoney(cart.item_cost_total)}</span>
-                    <span>Fulfillment: {formatMoney(cart.fulfillment_cost_total)}</span>
-                    <span>Deposits: {formatMoney(cart.returnable_deposits)}</span>
+                    <span>Shipping/pickup: {formatMoney(cart.fulfillment_cost_total)}</span>
                   </div>
                   {cart.reason_lost && (
                     <div className="alternative-reason">
@@ -465,7 +464,7 @@ export default function BestCart({
                           className="secondary-button"
                           onClick={() => onTryVendorMix(cart.vendor_ids)}
                         >
-                          Try this vendor mix
+                          Use this mix
                         </button>
                       )}
                       <VendorBreakdown plan={cart} />
@@ -478,17 +477,6 @@ export default function BestCart({
         </div>
       )}
 
-      <div className="totals">
-        {result.subscription_savings > 0 && (
-          <div>Subscription savings: {formatMoney(result.subscription_savings)}</div>
-        )}
-        <div>Items: {formatMoney(result.product_subtotal)}</div>
-        <div>Fulfillment: {formatMoney(result.fulfillment_cost_total)}</div>
-        {result.returnable_deposits > 0 && (
-          <div>Returnable deposits: {formatMoney(result.returnable_deposits)}</div>
-        )}
-        <div className="grand-total">Total due today: {formatMoney(result.total_due_today)}</div>
-      </div>
     </div>
   );
 }
