@@ -26,7 +26,7 @@ function AgentTrace({ steps }: { steps: AgentTraceStep[] }) {
   return (
     <details className="agent-trace">
       <summary>
-        Agent trace ({steps.length} step{steps.length === 1 ? "" : "s"})
+        How this answer was worked out ({steps.length} step{steps.length === 1 ? "" : "s"})
       </summary>
       <ol>
         {steps.map((step) => (

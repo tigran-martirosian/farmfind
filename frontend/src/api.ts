@@ -83,10 +83,6 @@ export function checkVendorConnection(vendorId: string): Promise<VendorConnectio
   return postJSON<VendorConnection>(`/vendor-connections/${vendorId}/check`);
 }
 
-export function fetchVendorConnection(vendorId: string): Promise<VendorConnection> {
-  return getJSON<VendorConnection>(`/vendor-connections/${vendorId}`);
-}
-
 export function fetchVendorConnectionMetadata(vendorId: string): Promise<VendorConnectionMetadata> {
   return getJSON<VendorConnectionMetadata>(`/vendor-connections/${vendorId}/metadata`);
 }
@@ -95,20 +91,12 @@ export function openVendorLoginSession(vendorId: string): Promise<LoginSessionRe
   return postJSON<LoginSessionResult>(`/vendor-connections/${vendorId}/login-session?force_open=true`);
 }
 
-export function fetchVendorNow(vendorId: string): Promise<FetchJobStatus> {
-  return postJSON<FetchJobStatus>(`/vendor-connections/${vendorId}/fetch?force=true`);
-}
-
 export function startVendorFetchJob(vendorId: string): Promise<FetchJobStatus> {
   return postJSON<FetchJobStatus>(`/vendor-connections/${vendorId}/fetch?force=true`);
 }
 
 export function fetchVendorFetchJob(vendorId: string, jobId: string): Promise<FetchJobStatus> {
   return getJSON<FetchJobStatus>(`/vendor-connections/${vendorId}/fetch-jobs/${jobId}`);
-}
-
-export function fetchLatestVendorFetchJob(vendorId: string): Promise<FetchJobStatus> {
-  return getJSON<FetchJobStatus>(`/vendor-connections/${vendorId}/fetch-jobs/latest`);
 }
 
 export function fetchShippingQuote(vendorId: string): Promise<ShippingQuote> {

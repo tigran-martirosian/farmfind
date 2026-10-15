@@ -24,14 +24,12 @@ from .models import FetchMetadata, FetchServiceResult, ShippingQuote, VendorConn
 from .shipping_quote import build_shipping_quote_from_html
 from .storage import (
     DATA_DIR,
-    latest_fetch_metadata,
     list_fetch_metadata,
     load_vendor_pages,
     safe_path_part,
     sanitize_reason,
 )
 from .vendor_fetcher import (
-    fetch_all_connected_vendor_pages,
     fetch_vendor_page as fetch_target_page,
     shared_cdp_fetch_worker,
 )
@@ -75,27 +73,6 @@ def fetch_vendor_page(
     return service_result_from_metadata(
         fetch_target_page(target, force_refresh=force_refresh)
     )
-
-
-def fetch_all_vendor_pages(
-    vendor_id: str | None = None,
-    force_refresh: bool = False,
-) -> list[FetchServiceResult]:
-    targets = load_vendor_pages()
-    if vendor_id is not None:
-        targets = [target for target in targets if target.vendor_id == vendor_id]
-    return [
-        service_result_from_metadata(metadata)
-        for metadata in fetch_all_connected_vendor_pages(
-            targets,
-            force_refresh=force_refresh,
-        )
-    ]
-
-
-def get_latest_vendor_fetch(vendor_id: str, page_id: str) -> FetchServiceResult | None:
-    metadata = latest_fetch_metadata(vendor_id, page_id)
-    return service_result_from_metadata(metadata) if metadata else None
 
 
 def _artifact_paths_for(metadata: FetchMetadata) -> dict[str, str | None]:

@@ -2,14 +2,12 @@
 from __future__ import annotations
 
 from .data_loader import CatalogMode, load_catalog
-from .explanations import reason_lost
 from .fulfillment import allowed_methods, product_method_available
 from .models import CanonicalProduct, Product, Vendor
 from .normalizer import normalize_product, normalize_quantity
 from .optimizer import optimize
 from .schemas import (
     CatalogDiagnostics,
-    CartPlan,
     ImportedProductCandidate,
     NormalizedProduct,
     OptimizeRequest,
@@ -260,13 +258,6 @@ def optimize_cart(request: OptimizeRequest) -> OptimizeResponse:
     )
     return response.model_copy(update={"catalog_diagnostics": diagnostics})
 
-
-
-def explain_cart(cart_plan: CartPlan, winner: CartPlan | None = None) -> list[str]:
-    explanations = list(cart_plan.warnings) + list(cart_plan.notes)
-    if winner is not None and cart_plan.rank != winner.rank:
-        explanations.append(reason_lost(cart_plan, winner))
-    return explanations
 
 
 def validate_import_candidate(candidate: ImportedProductCandidate) -> ImportedProductCandidate:

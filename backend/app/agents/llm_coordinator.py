@@ -35,9 +35,7 @@ location itself, so call it once you know the items and the town.
 If the items or the town are missing, or a tool reports that the location is not \
 recognised, ask the user one short question instead of guessing.
 
-In your final reply, recommend the best cart from build_cart, say how each \
-vendor's order is fulfilled, state the total, and mention the alternatives briefly. \
-Quote dollar amounts only as they appear in tool results. Do not calculate new \
+In your final reply, recommend the best cart from build_cart in two or three short \nsentences: the total, which vendors and how each is fulfilled, and why it wins. \nThe cart and the alternatives are shown next to your reply, so do not list \nthe items or the alternatives. Quote dollar amounts only as they appear in tool results. Do not calculate new \
 amounts such as differences or savings, and do not estimate a price yourself. \
 Plain text only, no Markdown: no asterisks, headings or tables."""
 

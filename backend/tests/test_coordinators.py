@@ -44,7 +44,8 @@ def test_rule_based_runs_the_fixed_pipeline_and_writes_the_answer():
     assert turn.recommendation.total == 74.54
     assert turn.reply.startswith("Best order for Exampleville: $74.54 total ($66.50 items + $8.04 fulfillment).")
     assert "Example Farm G, pickup at Samplebury Farm Gate (6 mi)" in turn.reply
-    assert "Alternatives:\n- $92.75 from Example Farm E (pickup)" in turn.reply
+    assert "Alternatives:" not in turn.reply
+    assert "Cheapest of 4 carts compared." in turn.reply
     assert reply_problems(turn.reply, turn.recommendation) == []
     assert trace_of(bus) == [
         ("user", "rule_based", "parse_request"),

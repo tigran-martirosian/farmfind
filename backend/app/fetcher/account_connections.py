@@ -176,10 +176,6 @@ def safe_detect_markers(page, markers) -> list[str]:
     return detected_markers(text, markers)
 
 
-def page_text_excerpt(page, limit: int = 1500) -> str:
-    return safe_page_text(page).strip()[:limit]
-
-
 def login_wall_markers(config: VendorConnectionConfig) -> list[str]:
     return [
         "sign in",

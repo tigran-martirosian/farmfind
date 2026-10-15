@@ -113,10 +113,3 @@ def load_catalog(catalog_mode: CatalogMode) -> tuple[list[Product], list[Vendor]
     return products, list(vendor_map.values())
 
 
-# Short names for the demo catalog loaders.
-def load_vendors() -> list[Vendor]:
-    return load_demo_vendors()
-
-
-def load_products() -> list[Product]:
-    return load_demo_products()

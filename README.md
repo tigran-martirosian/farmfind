@@ -4,7 +4,9 @@ I made FarmFind for my own use, because comparing farm web shops by hand takes a
 
 Everything in this repository is sample data. The vendors, towns and prices are fictional.
 
-<img src="docs/dashboard.png" width="640" alt="The chat panel: a typed order, the answer from the Claude coordinator, the recommended cart and the agent trace">
+<img src="docs/demo.gif" width="640" alt="A short recording: an order is typed into the chat and the cheapest cart appears">
+
+<img src="docs/dashboard.png" width="640" alt="The chat panel after the answer: a short reply from the Claude coordinator, the recommended cart with alternatives and one total, and the agent steps folded away">
 
 ## Finding the cheapest cart
 

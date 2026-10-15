@@ -410,15 +410,6 @@ def recover_incomplete_offer(
     return recovered, result
 
 
-def write_import_candidate():
-    """Marker function for the candidate-writing boundary.
-
-    Actual filesystem writes remain in import_candidates.py; keeping this named
-    boundary makes the extraction pipeline easier for future agents to inspect.
-    """
-    raise NotImplementedError("Use create_import_candidates_from_variant_snapshot.")
-
-
 def report_fetch_coverage(captured: CapturedProductPage) -> dict:
     trace = []
     for variant in captured.variants:

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 
-from ..schemas import CartPlan
 from .messages import CartResult, FulfillmentChoice, ShoppingRequest
 
 METHOD_LABELS = {
@@ -55,18 +54,13 @@ def compose_reply(request: ShoppingRequest, result: CartResult, unknown_items: l
             f"Best order{where}: {money(cart.total_estimated_cost)} total "
             f"({money(cart.item_cost_total)} items + {money(cart.fulfillment_cost_total)} fulfillment)."
         )
-        for choice in result.fulfillment:
-            packages = "; ".join(
-                f"{package.package_count} x {_short_name(package.product_name)} "
-                f"({money(package.line_total)})"
-                for item in cart.selected_items
-                if item.vendor_id == choice.vendor_id
-                for package in item.packages
-            )
-            lines.append(
-                f"- {choice.vendor_name}, {_describe(choice)}: {packages}. "
-                f"Fulfillment {money(choice.cost)}."
-            )
+        sources = "; ".join(
+            f"{choice.vendor_name}, {_describe(choice)}" for choice in result.fulfillment
+        )
+        if sources:
+            lines[0] += f" From {sources}."
+        if cart.alternative_carts:
+            lines[0] += f" Cheapest of {len(cart.alternative_carts) + 1} carts compared."
     else:
         lines.append("I could not build a cart for this request.")
     for item in cart.unavailable_items:
@@ -74,10 +68,9 @@ def compose_reply(request: ShoppingRequest, result: CartResult, unknown_items: l
             f"Not available: {item.requested_quantity:g} {item.unit.value} of "
             f"{product_label(item.canonical_product.value)} ({item.reason.replace('_', ' ')})."
         )
-    if cart.alternative_carts:
-        lines.append("Alternatives:")
-        lines.extend(_alternative_line(plan) for plan in cart.alternative_carts)
-    lines.extend(cart.warnings)
+    # Warnings the cart card already shows under each shop are not repeated here.
+    shown_in_cart = {w for breakdown in cart.vendor_breakdowns for w in breakdown.warnings}
+    lines.extend(w for w in cart.warnings if w not in shown_in_cart)
     if unknown_items:
         lines.append(unknown_items_note(unknown_items))
     return "\n".join(lines)
@@ -90,20 +83,6 @@ def _describe(choice: FulfillmentChoice) -> str:
         if choice.distance_miles is not None:
             label += f" ({choice.distance_miles:g} mi)"
     return label
-
-
-def _alternative_line(plan: CartPlan) -> str:
-    vendors = ", ".join(
-        f"{breakdown.vendor_name} ({METHOD_LABELS[breakdown.fulfillment_method]})"
-        for breakdown in plan.vendor_breakdowns
-    )
-    reason = f": {plan.reason_lost}" if plan.reason_lost else ""
-    return f"- {money(plan.total_estimated_cost)} from {vendors}{reason}."
-
-
-def _short_name(display_name: str) -> str:
-    """Display names repeat the package size after an em dash; drop that part."""
-    return display_name.split(" — ")[0]
 
 
 def reply_problems(reply: str, result: CartResult | None) -> list[str]:

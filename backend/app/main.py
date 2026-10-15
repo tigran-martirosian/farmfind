@@ -55,7 +55,7 @@ from .fetcher.account_connections import (
     launch_login_session,
     list_vendor_connections,
 )
-from .fetcher.models import FetchMetadata, FetchServiceResult, LoginSessionResult, ShippingQuote, VendorConnectionMetadata
+from .fetcher.models import FetchMetadata, LoginSessionResult, ShippingQuote, VendorConnectionMetadata
 from .fetcher.models import FetchJobStatus, VendorAccountConnection
 from .fetcher.fetch_jobs import get_fetch_job, get_latest_fetch_job, start_fetch_job
 from .fetcher.import_candidates import (
@@ -66,7 +66,6 @@ from .fetcher.import_candidates import (
 )
 from .fetcher.services import (
     capture_shipping_quote,
-    fetch_all_vendor_pages,
     vendor_connection_metadata,
 )
 from .fetcher.storage import list_fetch_metadata

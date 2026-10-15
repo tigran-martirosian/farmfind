@@ -308,35 +308,6 @@ def _path(url: str) -> str:
     return (urlparse(url).path or "").rstrip("/").lower()
 
 
-def _score_cdp_page(page, target: VendorPageTarget) -> int:
-    url = getattr(page, "url", "") or ""
-    if not url or url == "about:blank":
-        return -100
-    if _host(url) != _host(target.url):
-        return -100
-    score = 10
-    page_path = _path(url)
-    target_path = _path(target.url)
-    if page_path == target_path:
-        score += 100
-    elif target_path and (page_path.startswith(target_path) or target_path.startswith(page_path)):
-        score += 60
-    if "/store" in page_path:
-        score += 20
-    if "/account" in page_path:
-        score -= 10
-    return score
-
-
-def _best_cdp_page(browser, target: VendorPageTarget):
-    pages = [page for context in browser.contexts for page in context.pages]
-    scored = sorted(((_score_cdp_page(page, target), page) for page in pages), key=lambda item: item[0], reverse=True)
-    if scored and scored[0][0] > 0:
-        return scored[0][1]
-    context = browser.contexts[0] if browser.contexts else browser.new_context()
-    return context.pages[0] if context.pages else context.new_page()
-
-
 def _controlled_cdp_fetch_page(browser, target: VendorPageTarget):
     """Create a dedicated tab in the authenticated CDP context for full crawls."""
     context = browser.contexts[0] if browser.contexts else browser.new_context()
@@ -350,10 +321,6 @@ def _controlled_cdp_fetch_page(browser, target: VendorPageTarget):
     except Exception:
         pass
     return page
-
-
-def _is_usable_store_tab(url: str, target: VendorPageTarget) -> bool:
-    return _host(url) == _host(target.url) and "/store" in _path(url)
 
 
 def _wait_for_cdp_product_content(page) -> None:
@@ -856,5 +823,3 @@ def fetch_all_connected_vendor_pages(
     return results
 
 
-def fetch_vendor_page_with_connection(target: VendorPageTarget) -> FetchMetadata:
-    return fetch_vendor_page(target)

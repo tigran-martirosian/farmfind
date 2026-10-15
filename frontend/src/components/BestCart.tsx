@@ -324,6 +324,7 @@ function VendorBreakdown({
             </div>
           )}
 
+          {groups.length > 1 && (
           <div className="vendor-totals">
             <div>
               <span>Vendor item subtotal</span>
@@ -350,6 +351,7 @@ function VendorBreakdown({
               <strong>{formatMoney(getVendorTotal(group))}</strong>
             </div>
           </div>
+          )}
         </div>
       ))}
     </div>
@@ -387,6 +389,8 @@ export default function BestCart({
   onTryVendorMix,
 }: Props) {
   const [expandedRank, setExpandedRank] = useState<number | null>(null);
+  const shownInShops = new Set(result.vendor_breakdowns.flatMap((vendor) => vendor.warnings));
+  const cartWarnings = result.warnings.filter((warning) => !shownInShops.has(warning));
 
   return (
     <div className="card">
@@ -401,9 +405,9 @@ export default function BestCart({
         onExcludeProduct={onExcludeProduct}
       />
 
-      {result.warnings.length > 0 && (
+      {cartWarnings.length > 0 && (
         <ul className="vendor-notes">
-          {result.warnings.map((warning) => (
+          {cartWarnings.map((warning) => (
             <li key={warning}>{warning}</li>
           ))}
         </ul>
@@ -443,7 +447,7 @@ export default function BestCart({
                     <span>{expanded ? "Hide preview" : "Preview alternative cart"}</span>
                   </button>
                   <div className="alternative-summary">
-                    <span>Vendors: {cart.vendor_ids.join(", ")}</span>
+                    <span>Shops: {cart.vendor_breakdowns.map((vendor) => vendor.vendor_name).join(", ")}</span>
                     <span>Items: {formatMoney(cart.item_cost_total)}</span>
                     <span>Fulfillment: {formatMoney(cart.fulfillment_cost_total)}</span>
                     <span>Deposits: {formatMoney(cart.returnable_deposits)}</span>
@@ -475,15 +479,15 @@ export default function BestCart({
       )}
 
       <div className="totals">
-        <div>Regular product subtotal: {formatMoney(result.regular_product_subtotal)}</div>
-        <div>Subscription savings: {formatMoney(result.subscription_savings)}</div>
-        <div>Product subtotal: {formatMoney(result.product_subtotal)}</div>
-        <div>Fulfillment cost: {formatMoney(result.fulfillment_cost_total)}</div>
-        <div>Estimated cost excl. deposits: {formatMoney(result.total_estimated_cost)}</div>
-        <div>Returnable deposits due today: {formatMoney(result.returnable_deposits)}</div>
-        <div className="grand-total">
-          Due today incl. deposits: {formatMoney(result.total_due_today)}
-        </div>
+        {result.subscription_savings > 0 && (
+          <div>Subscription savings: {formatMoney(result.subscription_savings)}</div>
+        )}
+        <div>Items: {formatMoney(result.product_subtotal)}</div>
+        <div>Fulfillment: {formatMoney(result.fulfillment_cost_total)}</div>
+        {result.returnable_deposits > 0 && (
+          <div>Returnable deposits: {formatMoney(result.returnable_deposits)}</div>
+        )}
+        <div className="grand-total">Total due today: {formatMoney(result.total_due_today)}</div>
       </div>
     </div>
   );
