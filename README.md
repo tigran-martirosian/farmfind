@@ -18,7 +18,7 @@ The search tries every combination, so it suits short lists and a handful of ven
 
 Shop pages are read with a browser (Playwright), including shops that show prices only after login. What it finds waits in a review list, and only approved products reach the catalog.
 
-The fetcher's tests run offline. In this repository it isn't run against live shops, and its page parsers are written for specific shop layouts.
+To pull today's prices from the farms, run `python -m app.fetcher.pull` from `backend/`. A farm whose login has a human check gets signed into by hand once, with `python -m app.fetcher.login_by_hand`. The page parsers are written for these shops' layouts, and the fetcher's tests run offline on saved pages.
 
 ## The chat
 
@@ -46,12 +46,12 @@ npm install
 npm run dev                                          # http://localhost:5173
 ```
 
-In the dashboard, pick "Demo samples only" as the catalog to see the sample vendors. Chat works without a key. How to turn on the Claude coordinator is in [docs/architecture.md](docs/architecture.md#chat-agents).
+The real farm prices stay on my computer, so on a fresh copy open "More options" in the item list and pick "Sample data" as the product catalog. Chat works without a key. How to turn on the Claude coordinator is in [docs/architecture.md](docs/architecture.md#chat-agents).
 
 The tests:
 
 ```bash
-cd backend && pytest             # 431 tests, all offline
+cd backend && pytest             # all offline
 cd frontend && npm run build     # type-checks and builds
 ```
 
